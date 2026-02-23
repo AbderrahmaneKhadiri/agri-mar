@@ -175,16 +175,39 @@ export const quotes = pgTable("quotes", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// --- FARMER PHOTOS (Gallery) ---
+export const farmerPhotos = pgTable("farmer_photos", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerProfileId: uuid("farmer_profile_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    url: text("url").notNull(),
+    caption: text("caption"),
+    isMain: boolean("is_main").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// --- REVIEWS (Trust System) ---
+export const reviews = pgTable("reviews", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fromUserId: text("from_user_id").references(() => user.id, { onDelete: 'cascade' }).notNull(),
+    toUserId: text("to_user_id").references(() => user.id, { onDelete: 'cascade' }).notNull(),
+    rating: integer("rating").notNull(), // 1 to 5
+    comment: text("comment"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- RELATIONS ---
 export const userRelations = relations(user, ({ one, many }) => ({
     farmerProfile: one(farmerProfiles),
     companyProfile: one(companyProfiles),
-    sentMessages: many(messages), // User can send many messages
+    sentMessages: many(messages),
+    reviewsSent: many(reviews, { relationName: "reviewer" }),
+    reviewsReceived: many(reviews, { relationName: "reviewee" }),
 }));
 
 export const farmerProfileRelations = relations(farmerProfiles, ({ one, many }) => ({
     user: one(user, { fields: [farmerProfiles.userId], references: [user.id] }),
     connections: many(connections),
+    photos: many(farmerPhotos),
 }));
 
 export const companyProfileRelations = relations(companyProfiles, ({ one, many }) => ({
@@ -211,4 +234,13 @@ export const messageRelations = relations(messages, ({ one }) => ({
 
 export const notificationRelations = relations(notifications, ({ one }) => ({
     user: one(user, { fields: [notifications.userId], references: [user.id] }),
+}));
+
+export const farmerPhotoRelations = relations(farmerPhotos, ({ one }) => ({
+    farmer: one(farmerProfiles, { fields: [farmerPhotos.farmerProfileId], references: [farmerProfiles.id] }),
+}));
+
+export const reviewRelations = relations(reviews, ({ one }) => ({
+    reviewer: one(user, { fields: [reviews.fromUserId], references: [user.id], relationName: "reviewer" }),
+    reviewee: one(user, { fields: [reviews.toUserId], references: [user.id], relationName: "reviewee" }),
 }));

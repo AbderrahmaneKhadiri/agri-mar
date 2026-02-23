@@ -18,6 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { generateQuotePDF } from "@/lib/pdf-manager";
+import { Download } from "lucide-react";
 
 interface QuoteMessageProps {
     quote: any;
@@ -39,6 +41,22 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
         } else {
             alert(result.error);
         }
+    };
+
+    const handleDownload = () => {
+        generateQuotePDF({
+            quoteNumber: quote.id.slice(0, 8).toUpperCase(),
+            date: quote.createdAt,
+            senderName: isSender ? "Moi" : (quote.sender?.name || "Partenaire"),
+            recipientName: !isSender ? "Moi" : "Partenaire",
+            productName: quote.productName,
+            quantity: quote.quantity,
+            unitPrice: quote.unitPrice,
+            totalAmount: quote.totalAmount,
+            currency: quote.currency,
+            status: status,
+            notes: quote.notes
+        });
     };
 
     return (
@@ -128,6 +146,20 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                         className="rounded-xl h-10 bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-green-200"
                     >
                         {loading === "ACCEPTED" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accepter l'offre"}
+                    </Button>
+                </CardFooter>
+            )}
+
+            {(status === "ACCEPTED" || status === "DECLINED") && (
+                <CardFooter className="p-5 pt-0">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleDownload}
+                        className="w-full rounded-xl h-10 border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[9px] hover:bg-slate-50 flex items-center gap-2"
+                    >
+                        <Download className="h-3 w-3" />
+                        Télécharger le document PDF
                     </Button>
                 </CardFooter>
             )}

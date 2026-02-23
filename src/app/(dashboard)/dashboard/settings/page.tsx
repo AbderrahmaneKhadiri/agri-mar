@@ -15,7 +15,10 @@ export default async function SettingsPage() {
     if (session.user.role === "FARMER") {
         const profile = await farmerRepository.findByUserId(session.user.id);
         if (!profile) return <div>Profil non trouvé</div>;
-        return <FarmerSettingsForm profile={profile} />;
+
+        const photos = await farmerRepository.getPhotos(profile.id);
+
+        return <FarmerSettingsForm profile={profile} initialPhotos={photos} />;
     } else {
         const profile = await companyRepository.findByUserId(session.user.id);
         if (!profile) return <div>Profil non trouvé</div>;

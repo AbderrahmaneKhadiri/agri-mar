@@ -8,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, CheckCircle2 } from "lucide-react";
+import { X, Plus, Loader2, CheckCircle2, Image as ImageIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { addFarmerPhotoAction, deleteFarmerPhotoAction } from "@/actions/social.actions";
 
-export function FarmerSettingsForm({ profile }: { profile: any }) {
+export function FarmerSettingsForm({ profile, initialPhotos = [] }: { profile: any, initialPhotos?: any[] }) {
     const [isSaving, setIsSaving] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errors, setErrors] = useState<any>({});
+    const [photos, setPhotos] = useState<any[]>(initialPhotos);
+    const [newPhotoUrl, setNewPhotoUrl] = useState("");
+    const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
     // Local state for complex array fields
     const [cropTypes, setCropTypes] = useState<string[]>(profile.cropTypes || []);
@@ -57,6 +61,27 @@ export function FarmerSettingsForm({ profile }: { profile: any }) {
         setCropTypes(cropTypes.filter(c => c !== crop));
     };
 
+    const handleAddPhoto = async () => {
+        if (!newPhotoUrl.trim()) return;
+        setIsAddingPhoto(true);
+        const result = await addFarmerPhotoAction(newPhotoUrl);
+        if (result.success) {
+            setPhotos([{ url: newPhotoUrl, createdAt: new Date() }, ...photos]);
+            setNewPhotoUrl("");
+            setSuccessMessage("Photo ajoutée !");
+            setTimeout(() => setSuccessMessage(null), 3000);
+        }
+        setIsAddingPhoto(false);
+    };
+
+    const handleDeletePhoto = async (photoId: string) => {
+        if (!confirm("Supprimer cette photo ?")) return;
+        const result = await deleteFarmerPhotoAction(photoId);
+        if (result.success) {
+            setPhotos(photos.filter(p => p.id !== photoId));
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div className="flex items-center justify-between">
@@ -76,6 +101,7 @@ export function FarmerSettingsForm({ profile }: { profile: any }) {
                     <TabsList className="bg-slate-100/50 p-1 mb-6 rounded-2xl h-14">
                         <TabsTrigger value="general" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Exploitation</TabsTrigger>
                         <TabsTrigger value="crops" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Cultures & Spécialités</TabsTrigger>
+                        <TabsTrigger value="gallery" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Galerie Photo</TabsTrigger>
                         <TabsTrigger value="contact" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Contact B2B</TabsTrigger>
                     </TabsList>
 
@@ -154,6 +180,56 @@ export function FarmerSettingsForm({ profile }: { profile: any }) {
                                         <Label htmlFor="availableProductionVolume" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Volume disponible immédiatement</Label>
                                         <Input id="availableProductionVolume" name="availableProductionVolume" defaultValue={profile.availableProductionVolume} placeholder="Ex: 5 tonnes" className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
                                     </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="gallery" className="space-y-6 outline-none">
+                        <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
+                            <CardHeader className="p-8 border-b border-slate-50">
+                                <CardTitle className="text-xl font-black text-slate-900 tracking-tight">VOTRE GALERIE PHOTO</CardTitle>
+                                <CardDescription>Montrez votre exploitation aux acheteurs potentiels.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="flex gap-4">
+                                    <Input
+                                        placeholder="Lien de l'image (URL)..."
+                                        value={newPhotoUrl}
+                                        onChange={(e) => setNewPhotoUrl(e.target.value)}
+                                        className="h-12 rounded-xl border-slate-200"
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={handleAddPhoto}
+                                        disabled={isAddingPhoto || !newPhotoUrl}
+                                        className="h-12 bg-slate-900 rounded-xl px-6"
+                                    >
+                                        {isAddingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-2" /> Ajouter</>}
+                                    </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                    {photos.map((photo, i) => (
+                                        <div key={i} className="group relative rounded-3xl overflow-hidden aspect-video bg-slate-100">
+                                            <img src={photo.url} alt="Exploitation" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => photo.id && handleDeletePhoto(photo.id)}
+                                                    className="p-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-colors shadow-xl"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {photos.length === 0 && (
+                                        <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem]">
+                                            <ImageIcon className="w-12 h-12 mb-4 opacity-10" />
+                                            <p className="text-xs font-black uppercase tracking-widest">Aucune photo pour le moment</p>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
