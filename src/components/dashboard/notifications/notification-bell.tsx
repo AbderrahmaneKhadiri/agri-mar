@@ -38,8 +38,8 @@ export function NotificationBell() {
 
     useEffect(() => {
         loadNotifications();
-        // Polling basique toutes les 30 secondes pour simuler le temps réel
-        const interval = setInterval(loadNotifications, 30000);
+        // Polling basique toutes les 10 secondes pour simuler le temps réel
+        const interval = setInterval(loadNotifications, 10000);
         return () => clearInterval(interval);
     }, []);
 
