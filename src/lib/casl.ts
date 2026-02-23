@@ -1,5 +1,4 @@
 import { AbilityBuilder, createMongoAbility, MongoAbility, MongoQuery } from '@casl/ability';
-import { users } from '@/persistence/schema';
 
 // Roles according to our schema: "ADMIN" | "FARMER" | "COMPANY"
 export type Role = "ADMIN" | "FARMER" | "COMPANY";
