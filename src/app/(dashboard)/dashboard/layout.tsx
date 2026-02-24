@@ -16,6 +16,10 @@ export default async function DashboardLayout({
         headers: await headers()
     });
 
+    if (!session?.user) {
+        return redirect("/login");
+    }
+
     let profileName: string | undefined;
 
     if (session.user.role === "FARMER") {
