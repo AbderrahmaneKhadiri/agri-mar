@@ -1,14 +1,26 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { companyRepository } from "@/persistence/repositories/company.repository";
-import { Card, CardContent } from "@/components/ui/card";
+import { eq, and, desc } from "drizzle-orm";
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardFooter,
+    CardAction
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { ShoppingCart, Users, ClipboardList, TrendingUp, Building2, Search } from "lucide-react";
+import {
+    TrendingUp,
+    ChevronDown,
+    ArrowUpRight
+} from "lucide-react";
 
-import { getIncomingRequests, getAcceptedPartners } from "@/data-access/connections.dal";
-import { cn } from "@/lib/utils";
+import { getAcceptedPartners, getOutgoingRequests } from "@/data-access/connections.dal";
+import { getMarketplaceProducts } from "@/data-access/products.dal";
+import { CompanyDashboardClient } from "./company-dashboard-client";
 
 export default async function CompanyDashboardPage() {
     const session = await auth.api.getSession({
@@ -20,107 +32,110 @@ export default async function CompanyDashboardPage() {
     const profile = await companyRepository.findByUserId(session.user.id);
     if (!profile) return <div>Profil non trouvé</div>;
 
-    const [requests, partners] = await Promise.all([
-        getIncomingRequests(profile.id, "COMPANY"),
+    // Parallel data fetching for performance
+    const [suppliers, marketOffers, requests] = await Promise.all([
         getAcceptedPartners(profile.id, "COMPANY"),
+        getMarketplaceProducts(),
+        getOutgoingRequests(profile.id, "COMPANY")
     ]);
 
+    const stats = [
+        {
+            title: "Mes Fournisseurs",
+            value: suppliers.length,
+            trend: "+0%",
+            desc: "Partenariats actifs",
+            trendText: "Actuellement stable"
+        },
+        {
+            title: "Demandes",
+            value: requests.length,
+            trend: "+5%",
+            desc: "En attente de réponse",
+            trendText: "En cours de négociation"
+        },
+        {
+            title: "Marché Ouvert",
+            value: marketOffers.length,
+            trend: "+12%",
+            desc: "Offres disponibles",
+            trendText: "Nouveaux arrivages"
+        },
+        {
+            title: "Budget Projeté",
+            value: "--",
+            trend: "0%",
+            desc: "Analyse en cours",
+            trendText: "Données à venir"
+        },
+    ];
+
     return (
-        <div className="space-y-6 pb-12">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
             {/* Minimalist Top Indicator */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — ENTREPRISE</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE PILOTAGE</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.companyName || "Mon Entreprise"}</span>
-                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 text-[8px] font-black px-2 py-0.5 rounded uppercase border-transparent">VÉRIFIÉ</Badge>
+                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile.companyName}</span>
+                    <span className="bg-blue-50 text-blue-700 text-[8px] font-black px-2 py-0.5 rounded uppercase">ENTREPRISE</span>
                 </div>
             </div>
 
-            {/* Welcome Banner */}
-            <Card className="rounded-2xl p-8 md:p-10 border border-slate-200 shadow-sm mb-8 mt-4 bg-white">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-3 text-blue-600">
-                    <Building2 className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-[2px]">Vue d'ensemble</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-                    Bienvenue, <span className="capitalize">{profile?.companyName?.toLowerCase()}</span>
-                </h1>
-                <p className="text-slate-500 text-sm font-medium max-w-2xl leading-relaxed">
-                    Explorez le marché agricole pour trouver vos futurs fournisseurs. Suivez vos commandes et gérez votre réseau d'agriculteurs de confiance.
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Bienvenue, {profile.companyName}</h1>
+                <p className="text-slate-500 mt-2 font-medium max-w-3xl leading-relaxed">
+                    Pilotez vos <strong className="text-slate-700 font-bold underline decoration-blue-200/50">approvisionnements stratégiques</strong> et gérez vos relations avec les producteurs locaux. Analysez vos performances d&apos;achat et trouvez les meilleures opportunités du <strong className="text-slate-700 font-bold underline decoration-blue-200/50">marché agricole</strong>.
                 </p>
-                <div className="mt-6">
-                    <Button asChild className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[1.5px] shadow-sm h-11 px-6">
-                        <Link href="/dashboard/company/marketplace">
-                            <Search className="w-4 h-4 mr-2" />
-                            Explorer le catalogue
-                        </Link>
-                    </Button>
+            </div>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                        <span>Dashboard</span>
+                        <ChevronDown className="size-3" />
+                        <span className="text-slate-900 font-semibold">Vue d'ensemble</span>
+                    </div>
                 </div>
-            </Card>
+                <div className="flex items-center gap-2">
+                </div>
+            </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: "Mes Demandes", value: requests.length.toString(), icon: ClipboardList },
-                    { label: "Fournisseurs", value: partners.length.toString(), icon: Users },
-                    { label: "Marché Agricole", value: "Exploration", icon: ShoppingCart },
-                    { label: "Activité", value: "Normale", icon: TrendingUp },
-                ].map((stat, i) => (
-                    <Card key={i} className="rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow bg-white">
-                        <div className="flex justify-between items-start mb-6">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[1.5px] leading-relaxed w-24">{stat.label}</p>
-                            <div className="p-2 rounded-xl border border-slate-100 bg-blue-50/50">
-                                <stat.icon className="w-4 h-4 text-blue-600" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat, i) => (
+                    <Card key={i} className="@container/card bg-white shadow-sm border-slate-100">
+                        <CardHeader>
+                            <CardDescription className="text-[13px] font-medium text-slate-500">{stat.title}</CardDescription>
+                            <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">{stat.value}</CardTitle>
+                            <CardAction>
+                                <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
+                                    <TrendingUp className="size-2.5" />
+                                    {stat.trend}
+                                </Badge>
+                            </CardAction>
+                        </CardHeader>
+                        <CardFooter className="flex-col items-start gap-1 pb-4">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
+                                {stat.trendText} <TrendingUp className="size-3 text-emerald-500" />
                             </div>
-                        </div>
-                        <p className="text-3xl font-extrabold tracking-tight text-slate-900">{stat.value}</p>
+                            <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                                {stat.desc}
+                            </div>
+                        </CardFooter>
                     </Card>
                 ))}
             </div>
 
-            {/* Main Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                <Card className="lg:col-span-2 rounded-2xl p-8 border border-slate-200 shadow-sm bg-white h-full">
-                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-[2px]">Activités Récentes</h3>
-                    </div>
-                    <div className="h-48 flex flex-col items-center justify-center text-slate-400">
-                        <ClipboardList className="w-10 h-10 mb-4 opacity-20" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Aucune activité récente.</p>
-                    </div>
-                </Card>
-
-                <Card className="rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col h-full bg-white">
-                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-[2px]">Alertes Marché</h3>
-                    </div>
-
-                    <div className="flex-1 space-y-4">
-                        <div className="p-4 rounded-2xl border border-slate-50 bg-slate-50/50 hover:bg-white transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                                <p className="text-xs font-bold text-slate-900 uppercase pr-4">Nouveau fournisseur</p>
-                                <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent rounded text-[8px] font-bold uppercase tracking-widest">INFO</Badge>
-                            </div>
-                            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                                Un expert en maraichage vient de s'inscrire à Agadir.
-                            </p>
-                        </div>
-
-                        <div className="p-4 rounded-2xl border border-slate-50 bg-slate-50/50 hover:bg-white transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                                <p className="text-xs font-bold text-slate-900 uppercase pr-4">Tendances des prix</p>
-                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-transparent rounded text-[8px] font-bold uppercase tracking-widest">HAUSSE</Badge>
-                            </div>
-                            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                                Les prix des agrumes sont en hausse de 5% sur le marché de gros.
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-        </div>
+            <CompanyDashboardClient
+                initialSuppliers={suppliers}
+                initialMarketOffers={marketOffers as any}
+                initialRequests={requests}
+            />
+        </main>
     );
 }

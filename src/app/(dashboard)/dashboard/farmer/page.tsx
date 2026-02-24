@@ -1,18 +1,53 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
-import { Card } from "@/components/ui/card";
+import { eq, sql, and, desc } from "drizzle-orm";
+import { getIncomingRequests, getAcceptedPartners } from "@/data-access/connections.dal";
+import { getFarmerProducts } from "@/data-access/products.dal";
+import { FarmerDashboardTabs } from "./farmer-dashboard-tabs";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardFooter,
+    CardAction
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Tractor, TrendingUp, Handshake, MessageSquare, ArrowUpRight, Clock, Leaf } from "lucide-react";
-
-import { getIncomingRequests, getAcceptedPartners } from "@/data-access/connections.dal";
-import { getMonthlyRevenue, getRecentCommercialActivity } from "@/data-access/analytics.dal";
-import { RevenueChart } from "@/components/dashboard/farmer/revenue-chart";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+    Package,
+    Users,
+    ClipboardList,
+    TrendingUp,
+    ArrowUpRightIcon,
+    MessageSquare,
+    Calendar,
+    Filter,
+    Clock,
+    CheckCircle2,
+    ChevronDown,
+    Plus,
+    Search
+} from "lucide-react";
+
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 
 export default async function FarmerDashboardPage() {
     const session = await auth.api.getSession({
@@ -24,157 +59,152 @@ export default async function FarmerDashboardPage() {
     const profile = await farmerRepository.findByUserId(session.user.id);
     if (!profile) return <div>Profil non trouvé</div>;
 
-    const [requests, partners, revenueData, activity] = await Promise.all([
-        getIncomingRequests(profile.id, "FARMER"),
+    // Fetch farmer-specific metrics using DALs
+    const [myProducts, acceptedPartners, incomingRequests] = await Promise.all([
+        getFarmerProducts(profile.id),
         getAcceptedPartners(profile.id, "FARMER"),
-        getMonthlyRevenue(profile.id),
-        getRecentCommercialActivity(profile.id, 5),
+        getIncomingRequests(profile.id, "FARMER")
     ]);
 
-    const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
-
     return (
-        <div className="space-y-6 pb-12">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
             {/* Minimalist Top Indicator */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — EXPLOITANT AGRICOLE</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — CENTRE DE PILOTAGE</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.farmName || "Mon Domaine"}</span>
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[8px] font-black px-2 py-0.5 rounded uppercase border-transparent">CERTIFIÉ</Badge>
+                    <span className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded uppercase">CERTIFIÉ</span>
                 </div>
             </div>
 
-            {/* Welcome Banner */}
-            <Card className="rounded-2xl p-8 md:p-10 border border-slate-200 shadow-sm mb-8 mt-4 bg-white">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-3 text-emerald-600">
-                    <Leaf className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-[2px]">Vue d'ensemble</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-                    Tableau de bord de <span className="capitalize">{profile?.fullName?.toLowerCase()}</span>
-                </h1>
-                <p className="text-slate-500 text-sm font-medium max-w-2xl leading-relaxed">
-                    Gérez vos stocks, répondez aux offres commerciales et analysez vos revenus. <strong className="text-slate-700">{requests.length} nouvelles entreprises</strong> attendent votre validation pour consulter votre catalogue.
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Bienvenue, {profile.fullName.split(' ')[0]}</h1>
+                <p className="text-slate-500 mt-2 font-medium max-w-3xl leading-relaxed">
+                    Que vous soyez en phase de <strong className="text-slate-700 font-bold underline decoration-emerald-200/50">négociation contractuelle</strong> avec de grandes industries ou en vente <strong className="text-slate-700 font-bold underline decoration-emerald-200/50">directe aux acheteurs locaux</strong> (hôtels, restaurants, marchés), pilotez l&apos;ensemble de votre exploitation ici.
                 </p>
-            </Card>
-
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: "Demandes en attente", value: requests.length.toString(), icon: Clock },
-                    { label: "Catalogues Partagés", value: partners.length.toString(), icon: Handshake },
-                    { label: "Ventes (6 mois)", value: totalRevenue.toLocaleString() + " MAD", icon: TrendingUp },
-                    { label: "Transactions", value: activity.length.toString(), icon: MessageSquare },
-                ].map((stat, i) => (
-                    <Card key={i} className="rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow bg-white">
-                        <div className="flex justify-between items-start mb-6">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[1.5px] leading-relaxed w-24">{stat.label}</p>
-                            <div className="p-2 rounded-xl border border-slate-100 bg-emerald-50/50">
-                                <stat.icon className="w-4 h-4 text-emerald-600" />
-                            </div>
-                        </div>
-                        <p className="text-3xl font-extrabold tracking-tight text-slate-900">{stat.value}</p>
-                    </Card>
-                ))}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                {/* Revenue Chart */}
-                <Card className="lg:col-span-2 rounded-2xl p-8 border border-slate-200 shadow-sm bg-white">
-                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-[2px]">Évolution des revenus</h3>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[1px]">MAD</span>
+            {/* Contextual Header Section */}
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                        <span>Dashboard</span>
+                        <ChevronDown className="size-3" />
+                        <span className="text-slate-900 font-semibold">Vue d&apos;ensemble</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Metrics Grid - Exact "Documents" Block Style */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="@container/card bg-white shadow-sm border-slate-100">
+                    <CardHeader>
+                        <CardDescription className="text-[13px] font-medium text-slate-500">Mes Produits</CardDescription>
+                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                            {myProducts.length}
+                        </CardTitle>
+                        <CardAction>
+                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
+                                <TrendingUp className="size-2.5" />
+                                +12.5%
+                            </Badge>
+                        </CardAction>
+                    </CardHeader>
+                    <CardFooter className="flex-col items-start gap-1 pb-4">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
+                            Trending up this month <TrendingUp className="size-3 text-slate-900" />
                         </div>
-                    </div>
-                    <div className="h-[300px]">
-                        <RevenueChart data={revenueData} />
-                    </div>
+                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                            Vues catalogue cumulées
+                        </div>
+                    </CardFooter>
                 </Card>
 
-                {/* Recent Activity Mini-feed */}
-                <Card className="rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col bg-white">
-                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-[2px]">Activité Récente</h3>
-                        <span className="text-[10px] font-medium text-slate-400">{activity.length} actions</span>
-                    </div>
+                <Card className="@container/card bg-white shadow-sm border-slate-100">
+                    <CardHeader>
+                        <CardDescription className="text-[13px] font-medium text-slate-500">Collaborateurs</CardDescription>
+                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                            {acceptedPartners.length}
+                        </CardTitle>
+                        <CardAction>
+                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
+                                <TrendingUp className="size-2.5" />
+                                -20%
+                            </Badge>
+                        </CardAction>
+                    </CardHeader>
+                    <CardFooter className="flex-col items-start gap-1 pb-4">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
+                            Down 20% this period <TrendingUp className="size-3 text-slate-900" />
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                            Acquisition needs attention
+                        </div>
+                    </CardFooter>
+                </Card>
 
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-                        {activity.length === 0 ? (
-                            <div className="text-center py-10 opacity-50">
-                                <Clock className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Aucun devis</p>
-                            </div>
-                        ) : (
-                            activity.map((item) => (
-                                <div key={item.id} className="p-4 rounded-2xl border border-slate-50 bg-slate-50/50 hover:bg-white transition-colors">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <p className="text-xs font-bold text-slate-900 uppercase truncate pr-4">{item.productName}</p>
-                                        <Badge variant="outline" className={cn(
-                                            "rounded text-[8px] font-bold uppercase tracking-widest shrink-0 whitespace-nowrap border-none",
-                                            item.status === 'ACCEPTED' ? "bg-emerald-100 text-emerald-700" :
-                                                item.status === 'DECLINED' ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
-                                        )}>
-                                            {item.status}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between mt-3">
-                                        <p className="text-[10px] text-slate-500 font-bold">{item.totalAmount} MAD</p>
-                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
-                                            {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true, locale: fr })}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    <Button variant="secondary" className="w-full mt-4 rounded-xl text-[10px] font-bold uppercase tracking-widest h-11 text-slate-600">
-                        Voir tout l'historique
-                    </Button>
+                <Card className="@container/card bg-white shadow-sm border-slate-100">
+                    <CardHeader>
+                        <CardDescription className="text-[13px] font-medium text-slate-500">Demandes</CardDescription>
+                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                            {incomingRequests.filter(r => r.status === "PENDING").length}
+                        </CardTitle>
+                        <CardAction>
+                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
+                                <Clock className="size-2.5" />
+                                En cours
+                            </Badge>
+                        </CardAction>
+                    </CardHeader>
+                    <CardFooter className="flex-col items-start gap-1 pb-4">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
+                            Demandes de catalogue <TrendingUp className="size-3 text-slate-400" />
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                            À valider prochainement
+                        </div>
+                    </CardFooter>
+                </Card>
+
+                <Card className="@container/card bg-white shadow-sm border-slate-100">
+                    <CardHeader>
+                        <CardDescription className="text-[13px] font-medium text-slate-500">Score Réseau</CardDescription>
+                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                            84%
+                        </CardTitle>
+                        <CardAction>
+                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
+                                <TrendingUp className="size-2.5" />
+                                +4.5%
+                            </Badge>
+                        </CardAction>
+                    </CardHeader>
+                    <CardFooter className="flex-col items-start gap-1 pb-4">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
+                            Steady performance increase <TrendingUp className="size-3 text-slate-900" />
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                            Meets growth projections
+                        </div>
+                    </CardFooter>
                 </Card>
             </div>
 
-            {/* Decorative Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <Card className="bg-white rounded-2xl p-8 relative overflow-hidden group border border-slate-200 shadow-sm transition-all hover:shadow-md">
-                    <div className="relative z-10 flex flex-col justify-between h-full">
-                        <div>
-                            <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
-                                <Tractor className="w-6 h-6 text-emerald-600 group-hover:scale-110 transition-transform duration-500" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight mb-2">Gestion du Catalogue</h3>
-                            <p className="text-slate-500 text-xs font-medium mb-8 max-w-[250px] leading-relaxed">
-                                Mettez à jour vos stocks pour que les entreprises puissent passer commande.
-                            </p>
-                        </div>
-                        <Button asChild className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-[1.5px] shadow-sm h-11 px-6 w-max">
-                            <Link href="/dashboard/farmer/products">Voir mes produits</Link>
-                        </Button>
-                    </div>
-                </Card>
+            {/* Segmentation Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-0 mt-2" />
 
-                <Card className="bg-white rounded-2xl p-8 relative overflow-hidden group border border-slate-200 shadow-sm transition-all hover:shadow-md">
-                    <div className="relative z-10 flex flex-col justify-between h-full">
-                        <div>
-                            <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
-                                <Handshake className="w-6 h-6 text-emerald-600 group-hover:scale-110 transition-transform duration-500" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight mb-2">Nouvelles Connexions</h3>
-                            <p className="text-slate-500 text-xs font-medium mb-8 max-w-[250px] leading-relaxed">
-                                Découvrez les <strong className="text-emerald-600">{requests.length} requêtes</strong> d'accès à votre profil en attente.
-                            </p>
-                        </div>
-                        <Button asChild className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-[1.5px] shadow-sm h-11 px-6 w-max">
-                            <Link href="/dashboard/farmer/requests">Autoriser l'accès</Link>
-                        </Button>
-                    </div>
-                </Card>
-            </div>
-        </div>
+            <FarmerDashboardTabs
+                initialRequests={incomingRequests}
+                initialPartners={acceptedPartners}
+                initialProducts={myProducts}
+            />
+        </main>
     );
 }

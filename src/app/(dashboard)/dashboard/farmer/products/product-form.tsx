@@ -3,11 +3,25 @@
 import { useState, useEffect } from "react";
 import { ProductSelectDTO } from "@/data-access/products.dal";
 import { createProductAction, updateProductAction } from "@/actions/products.actions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Package } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface ProductFormProps {
     isOpen: boolean;
@@ -86,104 +100,116 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px] rounded-3xl p-6 border-none bg-white shadow-2xl">
-                <DialogHeader className="mb-4">
-                    <DialogTitle className="text-xl font-black text-slate-900 tracking-tight">
-                        {product ? "MODIFIER LE PRODUIT" : "NOUVEAU PRODUIT"}
-                    </DialogTitle>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[480px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
+                <div className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl">
+                    <div className="relative z-10">
+                        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">Catalogue</h3>
+                        <h2 className="text-xl font-bold tracking-tight leading-none text-white">
+                            {product ? "Modifier le Produit" : "Nouveau Produit"}
+                        </h2>
+                    </div>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Nom du produit</label>
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Nom de l&apos;Offre</Label>
                         <Input
-                            required value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
-                            className="bg-slate-50 border-slate-100 rounded-xl h-12"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                            className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
                             placeholder="Ex: Tomates Cerises Bio"
                         />
                     </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Description</label>
+
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Description Catalogue</Label>
                         <Textarea
-                            required value={formData.description} onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))}
-                            className="bg-slate-50 border-slate-100 rounded-xl min-h-[100px]"
+                            required
+                            value={formData.description}
+                            onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))}
+                            className="bg-white border-slate-200 rounded-xl min-h-[90px] shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700 resize-none"
                             placeholder="Détails, qualité, mode de culture..."
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Catégorie</label>
-                            <select
-                                className="w-full bg-slate-50 border-slate-100 rounded-xl h-12 px-3 text-sm focus:ring-green-500/20 outline-none"
-                                value={formData.category} onChange={(e) => setFormData(f => ({ ...f, category: e.target.value }))}
+                        <div className="space-y-1.5 flex flex-col pt-[18px]">
+                            <Select
+                                value={formData.category}
+                                onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}
                             >
-                                <option value="Legumes">Légumes</option>
-                                <option value="Fruits">Fruits</option>
-                                <option value="Cereales">Céréales</option>
-                                <option value="Autres">Autres</option>
-                            </select>
+                                <SelectTrigger className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus:ring-1 focus:ring-slate-300 text-[13px] font-medium text-slate-700">
+                                    <SelectValue placeholder="Catégorie" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-200">
+                                    <SelectItem value="Legumes">Légumes</SelectItem>
+                                    <SelectItem value="Fruits">Fruits</SelectItem>
+                                    <SelectItem value="Cereales">Céréales</SelectItem>
+                                    <SelectItem value="Autres">Autres</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Statut</label>
-                            <select
-                                className="w-full bg-slate-50 border-slate-100 rounded-xl h-12 px-3 text-sm focus:ring-green-500/20 outline-none"
-                                value={formData.status} onChange={(e) => setFormData(f => ({ ...f, status: e.target.value as any }))}
-                            >
-                                <option value="ACTIVE">Actif</option>
-                                <option value="SOLD_OUT">Epuisé</option>
-                                <option value="DRAFT">Brouillon</option>
-                            </select>
+                        <div className="space-y-1.5 flex flex-col justify-end">
+                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Prix (MAD)</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                required
+                                value={formData.price}
+                                onChange={(e) => setFormData(f => ({ ...f, price: e.target.value }))}
+                                className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
+                            />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Prix (MAD)</label>
-                            <Input
-                                type="number" step="0.01" required value={formData.price} onChange={(e) => setFormData(f => ({ ...f, price: e.target.value }))}
-                                className="bg-slate-50 border-slate-100 rounded-xl h-12"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Unité</label>
-                            <select
-                                className="w-full bg-slate-50 border-slate-100 rounded-xl h-12 px-3 text-sm focus:ring-green-500/20 outline-none"
-                                value={formData.unit} onChange={(e) => setFormData(f => ({ ...f, unit: e.target.value as any }))}
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Unité</Label>
+                            <Select
+                                value={formData.unit}
+                                onValueChange={(v) => setFormData(f => ({ ...f, unit: v as any }))}
                             >
-                                <option value="KG">Kilogramme</option>
-                                <option value="TONNE">Tonne</option>
-                                <option value="LITRE">Litre</option>
-                                <option value="UNITE">Unité</option>
-                                <option value="BOITE">Boîte</option>
-                            </select>
+                                <SelectTrigger className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus:ring-1 focus:ring-slate-300 text-[13px] font-medium text-slate-700">
+                                    <SelectValue placeholder="Unité" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-200">
+                                    <SelectItem value="KG">Kilogramme (kg)</SelectItem>
+                                    <SelectItem value="TONNE">Tonne (t)</SelectItem>
+                                    <SelectItem value="LITRE">Litre (L)</SelectItem>
+                                    <SelectItem value="UNITE">Unité (u)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Qté Min. Commande</label>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Stock Disponible</Label>
                             <Input
-                                type="number" required value={formData.minOrderQuantity} onChange={(e) => setFormData(f => ({ ...f, minOrderQuantity: e.target.value }))}
-                                className="bg-slate-50 border-slate-100 rounded-xl h-12"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Stock / Dispo</label>
-                            <Input
-                                type="number" required value={formData.stockQuantity} onChange={(e) => setFormData(f => ({ ...f, stockQuantity: e.target.value }))}
-                                className="bg-slate-50 border-slate-100 rounded-xl h-12"
+                                type="number"
+                                required
+                                value={formData.stockQuantity}
+                                onChange={(e) => setFormData(f => ({ ...f, stockQuantity: e.target.value }))}
+                                className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
                             />
                         </div>
                     </div>
 
-                    <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full mt-4 bg-green-600 hover:bg-green-500 text-white font-black h-12 rounded-xl text-[10px] tracking-widest uppercase transition-all shadow-lg shadow-green-900/10"
-                    >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (product ? 'Enregistrer les modifications' : 'Publier le produit')}
-                    </Button>
+                    <div className="flex items-center justify-between pt-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={onClose}
+                            className="h-11 px-6 text-[13px] font-semibold text-slate-500 hover:text-slate-800 hover:bg-transparent -ml-4"
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="h-11 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold"
+                        >
+                            {isLoading ? <Loader2 className="size-4 animate-spin" /> : (product ? 'Mettre à jour' : 'Publier au catalogue')}
+                        </Button>
+                    </div>
                 </form>
             </DialogContent>
         </Dialog>

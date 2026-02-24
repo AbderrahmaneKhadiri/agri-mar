@@ -1,34 +1,42 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { farmerRepository } from "@/persistence/repositories/farmer.repository";
+import { companyRepository } from "@/persistence/repositories/company.repository";
 
 export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    // 1. Session check on server-side for security (DAL)
     const session = await auth.api.getSession({
         headers: await headers()
     });
 
-    if (!session) {
-        redirect("/connexion");
+    let profileName: string | undefined;
+
+    if (session.user.role === "FARMER") {
+        const profile = await farmerRepository.findByUserId(session.user.id);
+        profileName = profile?.fullName;
+    } else if (session.user.role === "COMPANY") {
+        const profile = await companyRepository.findByUserId(session.user.id);
+        profileName = profile?.companyName;
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
-            {/* Sidebar - Fixed on the left */}
-            <Sidebar />
-
-            {/* Main Content Area */}
-            <main className="flex-1 ml-[280px] p-8">
-                {/* Content inner container */}
-                <div className="max-w-[1400px] mx-auto">
-                    {children}
+        <SidebarProvider>
+            <AppSidebar profileName={profileName} />
+            <SidebarInset>
+                <SiteHeader userId={session.user.id} />
+                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                    <div className="mx-auto w-full max-w-[1400px]">
+                        {children}
+                    </div>
                 </div>
-            </main>
-        </div>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }

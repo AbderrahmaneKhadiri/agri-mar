@@ -70,3 +70,33 @@ export async function getAcceptedPartnersFromDb(profileId: string, profileType: 
         });
     }
 }
+
+/**
+ * RAW QUERY: Récupère les demandes de connexion ENVOYÉES par un profil.
+ */
+export async function getOutgoingConnectionsFromDb(profileId: string, profileType: "FARMER" | "COMPANY") {
+    if (profileType === "COMPANY") {
+        return await db.query.connections.findMany({
+            where: and(
+                eq(connections.companyId, profileId),
+                eq(connections.initiatedBy, "COMPANY"),
+                eq(connections.status, "PENDING")
+            ),
+            with: {
+                farmer: true,
+            }
+        });
+    } else {
+        return await db.query.connections.findMany({
+            where: and(
+                eq(connections.farmerId, profileId),
+                eq(connections.initiatedBy, "FARMER"),
+                eq(connections.status, "PENDING")
+            ),
+            with: {
+                company: true,
+            }
+        });
+    }
+}
+

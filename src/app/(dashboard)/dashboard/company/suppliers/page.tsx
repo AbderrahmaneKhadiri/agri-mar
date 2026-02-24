@@ -2,12 +2,9 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { companyRepository } from "@/persistence/repositories/company.repository";
 import { getAcceptedPartners } from "@/data-access/connections.dal";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Calendar, MessageSquare, Phone, Tractor } from "lucide-react";
+import { CompanySuppliersClient } from "./company-suppliers-client";
+import { ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 export default async function SuppliersPage() {
     const session = await auth.api.getSession({
@@ -22,66 +19,39 @@ export default async function SuppliersPage() {
     const partners = await getAcceptedPartners(profile.id, "COMPANY");
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mes Fournisseurs</h1>
-                <p className="text-slate-500 mt-2">Gérez votre réseau de producteurs partenaires.</p>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
+            {/* Minimalist Top Indicator */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE COMMANDE</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile.companyName}</span>
+                    <span className="bg-blue-50 text-blue-700 text-[8px] font-black px-2 py-0.5 rounded uppercase">ENTREPRISE</span>
+                </div>
             </div>
 
-            {partners.length === 0 ? (
-                <div className="h-96 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed rounded-3xl bg-white/50">
-                    <Tractor className="w-12 h-12 mb-4 opacity-20" />
-                    <p className="font-medium">Vous n'avez pas encore de fournisseurs partenaires.</p>
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
+                <div className="flex items-center gap-2 mb-3 text-blue-600">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE RÉSEAU</span>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {partners.map((partner) => (
-                        <Card key={partner.id} className="border-none shadow-sm hover:shadow-md transition-all bg-white group overflow-hidden">
-                            <CardContent className="p-0">
-                                <div className="h-2 bg-green-600 w-full" />
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <Avatar className="h-16 w-16 border-2 border-slate-50 shadow-sm">
-                                            <AvatarImage src={partner.avatarUrl || ""} alt={partner.name} />
-                                            <AvatarFallback className="bg-green-50 text-green-700 font-bold text-xl">
-                                                {partner.name.charAt(0)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="bg-green-50 text-green-600 p-2 rounded-xl">
-                                            <Tractor className="h-5 w-5" />
-                                        </div>
-                                    </div>
-
-                                    <h4 className="text-lg font-bold text-slate-900 group-hover:text-green-600 transition-colors">{partner.name}</h4>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Producteur Agricole</p>
-
-                                    <div className="space-y-3 mt-6">
-                                        <div className="flex items-center text-sm text-slate-500">
-                                            <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-                                            {partner.location}
-                                        </div>
-                                        <div className="flex items-center text-sm text-slate-500">
-                                            <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                                            Partenaire depuis {format(new Date(partner.since), "MMM yyyy", { locale: fr })}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 mt-8">
-                                        <Button variant="outline" className="rounded-xl border-slate-100 hover:bg-slate-50 h-10">
-                                            <MessageSquare className="h-4 w-4 mr-2" />
-                                            Message
-                                        </Button>
-                                        <Button variant="outline" className="rounded-xl border-slate-100 hover:bg-slate-50 h-10">
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Appeler
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Mes Partenaires</h1>
+                <p className="text-slate-500 mt-2 font-medium max-w-3xl leading-relaxed">
+                    Retrouvez l&apos;ensemble de vos <strong className="text-slate-700 font-bold underline decoration-blue-200/50">fournisseurs certifiés</strong> et accédez à leurs catalogues de produits. Maintenir des relations solides est la clé pour une <strong className="text-slate-700 font-bold underline decoration-blue-200/50">chaîne logistique </strong> stable et transparente.
+                </p>
+            </div>
+            {/* Header contextuel */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                    <span>Partenaires</span>
+                    <ChevronDown className="size-3" />
+                    <span className="text-slate-900 font-semibold">Mes Fournisseurs</span>
                 </div>
-            )}
-        </div>
+            </div>
+
+            <CompanySuppliersClient initialPartners={partners} />
+        </main>
     );
 }

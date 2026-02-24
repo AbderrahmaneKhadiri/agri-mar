@@ -3,6 +3,7 @@ import { companyProfiles, connections, farmerProfiles, notifications } from "@/p
 import { defineAbilityFor } from "@/lib/casl";
 import { ConnectionResponseInput, connectionResponseSchema } from "@/lib/validations/connection.schema";
 import { and, eq } from "drizzle-orm";
+import { pusherServer } from "@/lib/pusher";
 
 export async function respondToConnectionRequest(
     responderUserId: string,
@@ -101,13 +102,16 @@ export async function respondToConnectionRequest(
 
             if (initiatorUserId) {
                 try {
-                    await db.insert(notifications).values({
+                    const [newNotif] = await db.insert(notifications).values({
                         userId: initiatorUserId,
                         type: "CONNECTION_ACCEPTED",
                         title: "Partenariat accepté",
                         description: `${responderName} a accepté votre demande de connexion !`,
                         link: connectionRecord.initiatedBy === "FARMER" ? "/dashboard/farmer/partners" : "/dashboard/company/suppliers",
-                    });
+                    }).returning();
+
+                    // Trigger Pusher for real-time update
+                    await pusherServer.trigger(`user-${initiatorUserId}`, "new-notification", newNotif);
                 } catch (notifyError) {
                     console.error("Non-blocking notification error (respondToConnectionRequest):", notifyError);
                 }

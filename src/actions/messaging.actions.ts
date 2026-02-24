@@ -11,7 +11,7 @@ import { pusherServer } from "@/lib/pusher";
 /**
  * Envoie un message dans une conversation établie.
  */
-export async function sendMessageAction({ connectionId, content }: { connectionId: string, content: string }) {
+export async function sendMessageAction({ connectionId, content, clientId }: { connectionId: string, content: string, clientId?: string }) {
     try {
         const session = await auth.api.getSession({
             headers: await headers()
@@ -40,47 +40,46 @@ export async function sendMessageAction({ connectionId, content }: { connectionI
             content,
         }).returning();
 
-        // 2.5 Déclencher l'événement Pusher (Temps Réel)
-        try {
-            await pusherServer.trigger(
-                `chat-${connectionId}`,
-                "new-message",
-                {
-                    ...newMessage,
-                    type: "MESSAGE",
-                    sender: {
-                        id: session.user.id,
-                        name: session.user.name,
-                        image: session.user.image, // session.user structure (might be different if it handles avatar diff)
-                        role: session.user.role,
-                    }
-                }
-            );
-        } catch (pusherError) {
-            console.error("Erreur Pusher (message):", pusherError);
-        }
+        // 2.5 & 3. Trigger Pusher and Notifications in parallel 
+        const pusherPayload = {
+            ...newMessage,
+            type: "MESSAGE",
+            clientId,
+            sender: {
+                id: session.user.id,
+                name: session.user.name,
+                image: session.user.image,
+                role: session.user.role,
+            }
+        };
 
-        // 3. Notification pour le destinataire
         const recipientUserId = session.user.id === connection.farmer.userId
             ? connection.company.userId
             : connection.farmer.userId;
 
-        if (recipientUserId) {
-            try {
-                const [newNotif] = await db.insert(notifications).values({
-                    userId: recipientUserId,
-                    type: "NEW_MESSAGE",
-                    title: "Nouveau message",
-                    description: `${session.user.name} vous a envoyé un message.`,
-                    link: session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages",
-                }).returning();
+        const backgroundTasks: Promise<any>[] = [
+            pusherServer.trigger(`chat-${connectionId}`, "new-message", pusherPayload).catch(e => console.error("Pusher error:", e))
+        ];
 
-                // 3.5 Déclencher l'événement de notification (Temps Réel)
-                await pusherServer.trigger(`user-${recipientUserId}`, "new-notification", newNotif);
-            } catch (notifyError) {
-                console.error("Non-blocking notification error (sendMessageAction):", notifyError);
-            }
+        if (recipientUserId) {
+            backgroundTasks.push((async () => {
+                try {
+                    const [newNotif] = await db.insert(notifications).values({
+                        userId: recipientUserId,
+                        type: "NEW_MESSAGE",
+                        title: "Nouveau message",
+                        description: `${session.user.name} vous a envoyé un message.`,
+                        link: session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages",
+                    }).returning();
+                    await pusherServer.trigger(`user-${recipientUserId}`, "new-notification", newNotif);
+                } catch (e) {
+                    console.error("Delayed notification error:", e);
+                }
+            })());
         }
+
+        // Wait for pusher event so sender feels "sent"
+        await backgroundTasks[0];
 
         revalidatePath(`/dashboard/farmer/messages`);
         revalidatePath(`/dashboard/company/messages`);

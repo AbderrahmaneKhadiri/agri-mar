@@ -36,5 +36,12 @@ export const farmerRepository = {
 
     async deletePhoto(photoId: string) {
         await db.delete(farmerPhotos).where(eq(farmerPhotos.id, photoId));
+    },
+
+    async getLatest(limit: number = 3) {
+        return await db.query.farmerProfiles.findMany({
+            orderBy: [desc(farmerProfiles.createdAt)],
+            limit: limit,
+        });
     }
 };

@@ -5,6 +5,9 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
 import { companyRepository } from "@/persistence/repositories/company.repository";
+import { db } from "@/persistence/db";
+import { user } from "@/persistence/schema";
+import { eq } from "drizzle-orm";
 import { farmerProfileSchema } from "@/lib/validations/farmer-profile.schema";
 import { companyProfileSchema } from "@/lib/validations/company-profile.schema";
 import { z } from "zod";
@@ -32,6 +35,13 @@ export async function updateFarmerProfileAction(formData: any) {
         }
 
         await farmerRepository.update(profile.id, parsed.data);
+
+        // Sync with User name if fullName is updated
+        if (parsed.data.fullName) {
+            await db.update(user)
+                .set({ name: parsed.data.fullName })
+                .where(eq(user.id, session.user.id));
+        }
 
         revalidatePath("/dashboard/settings");
         return { success: true };
@@ -63,6 +73,13 @@ export async function updateCompanyProfileAction(formData: any) {
         }
 
         await companyRepository.update(profile.id, parsed.data);
+
+        // Sync with User name if companyName is updated
+        if (parsed.data.companyName) {
+            await db.update(user)
+                .set({ name: parsed.data.companyName })
+                .where(eq(user.id, session.user.id));
+        }
 
         revalidatePath("/dashboard/settings");
         return { success: true };

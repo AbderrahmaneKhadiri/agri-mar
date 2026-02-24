@@ -1,209 +1,214 @@
 "use client";
 
 import { useState } from "react";
+
 import { updateCompanyProfileAction } from "@/actions/profile.actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, CheckCircle2, Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+    Building2,
+    MapPin,
+    Phone,
+    Globe,
+    ChevronDown,
+    Settings,
+    ShieldCheck,
+    Info,
+    Loader2
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 
 export function CompanySettingsForm({ profile }: { profile: any }) {
-    const [isSaving, setIsSaving] = useState(false);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [errors, setErrors] = useState<any>({});
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Local state for complex array fields
-    const [desiredProducts, setDesiredProducts] = useState<string[]>(profile.desiredProducts || []);
-    const [targetRegions, setTargetRegions] = useState<string[]>(profile.targetRegions || []);
+    // Calcul de complétion du profil
+    const calculateCompletion = () => {
+        let score = 0;
+        if (profile.name) score += 15;
+        if (profile.city) score += 15;
+        if (profile.phone) score += 15;
+        if (profile.address) score += 15;
+        if (profile.website) score += 20;
+        if (profile.logoUrl) score += 20;
+        return score;
+    };
 
-    const [newProduct, setNewProduct] = useState("");
-    const [newRegion, setNewRegion] = useState("");
+    const completion = calculateCompletion();
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSaving(true);
-        setSuccessMessage(null);
-        setErrors({});
-
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
-
-        const payload = {
-            ...data,
-            desiredProducts,
-            targetRegions,
-            establishedYear: parseInt(data.establishedYear as string),
+    async function onSubmit(formData: FormData) {
+        setIsLoading(true);
+        const data = {
+            name: formData.get("name") as string,
+            city: formData.get("city") as string,
+            address: formData.get("address") as string,
+            phone: formData.get("phone") as string,
+            website: formData.get("website") as string,
         };
 
-        const result = await updateCompanyProfileAction(payload);
-
-        if (result.success) {
-            setSuccessMessage("Profil entreprise mis à jour !");
-            setTimeout(() => setSuccessMessage(null), 3000);
-        } else if (result.error) {
-            setErrors(result.fields || { global: result.error });
+        const res = await updateCompanyProfileAction(data);
+        if (res.error) {
+            toast.error(res.error);
+        } else {
+            toast.success("Profil entreprise mis à jour");
         }
-        setIsSaving(false);
-    };
-
-    const addProduct = () => {
-        if (newProduct.trim() && !desiredProducts.includes(newProduct.trim())) {
-            setDesiredProducts([...desiredProducts, newProduct.trim()]);
-            setNewProduct("");
-        }
-    };
-
-    const addRegion = () => {
-        if (newRegion.trim() && !targetRegions.includes(newRegion.trim())) {
-            setTargetRegions([...targetRegions, newRegion.trim()]);
-            setNewRegion("");
-        }
-    };
+        setIsLoading(false);
+    }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configuration Entreprise</h1>
-                    <p className="text-slate-500 mt-2">Gérez votre présence sur le marché et vos critères de sourcing.</p>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
+            {/* Header contextuel */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                    <span>Paramètres</span>
+                    <ChevronDown className="size-3" />
+                    <span className="text-slate-900 font-semibold">Mon Compte Entreprise</span>
                 </div>
-                {successMessage && (
-                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none px-4 py-2 flex items-center gap-2 animate-in fade-in zoom-in slide-in-from-right-4">
-                        <CheckCircle2 className="h-4 w-4" /> {successMessage}
-                    </Badge>
-                )}
+
+                <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm min-w-[280px]">
+                    <div className="flex-1 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
+                            <span className="text-slate-400">Complétion du profil</span>
+                            <span className="text-emerald-600">{completion}%</span>
+                        </div>
+                        <Progress value={completion} className="h-1.5 bg-slate-100 [&>div]:bg-emerald-500" />
+                    </div>
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit}>
-                <Tabs defaultValue="business" className="w-full">
-                    <TabsList className="bg-slate-100/50 p-1 mb-6 rounded-2xl h-14">
-                        <TabsTrigger value="business" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Identité B2B</TabsTrigger>
-                        <TabsTrigger value="sourcing" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Sourcing & Marché</TabsTrigger>
-                        <TabsTrigger value="contact" className="rounded-xl px-8 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all h-full">Coordonnées</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="business" className="space-y-6 outline-none">
-                        <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="p-8 border-b border-slate-50">
-                                <CardTitle className="text-xl font-black text-slate-900 tracking-tight">ENTITÉ COMMERCIALE</CardTitle>
-                                <CardDescription>Informations officielles de votre entreprise.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="companyName" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dénomination Sociale</Label>
-                                        <Input id="companyName" name="companyName" defaultValue={profile.companyName} className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="industry" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Secteur d'activité</Label>
-                                        <Input id="industry" name="industry" defaultValue={profile.industry} className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="establishedYear" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Année de création</Label>
-                                        <Input id="establishedYear" name="establishedYear" type="number" defaultValue={profile.establishedYear} className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="country" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Siège (Pays)</Label>
-                                        <Input id="country" name="country" defaultValue={profile.country} className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="city" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Siège (Ville)</Label>
-                                        <Input id="city" name="city" defaultValue={profile.city} className="h-12 rounded-xl bg-slate-50 border-none focus-visible:bg-white transition-all font-medium" />
-                                    </div>
+            <div className="grid grid-cols-12 gap-6 mt-2">
+                <div className="col-span-12 lg:col-span-8">
+                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden">
+                        <CardHeader className="p-6 border-b bg-slate-50/10">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-900 p-2 rounded-lg text-white shadow-lg shadow-slate-900/10">
+                                    <Building2 className="size-4" />
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="sourcing" className="space-y-6 outline-none">
-                        <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="p-8 border-b border-slate-50">
-                                <CardTitle className="text-xl font-black text-slate-900 tracking-tight">BESOINS & STRATÉGIE</CardTitle>
-                                <CardDescription>Définissez les produits et zones que vous ciblez.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-8">
-                                <div className="space-y-4">
-                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PRODUITS RECHERCHÉS</Label>
-                                    <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl">
-                                        {desiredProducts.map(p => (
-                                            <Badge key={p} className="bg-blue-900 text-white pl-4 pr-2 py-2 rounded-xl flex items-center gap-2 hover:bg-blue-800 transition-all shadow-sm">
-                                                {p}
-                                                <button type="button" onClick={() => setDesiredProducts(desiredProducts.filter(x => x !== p))} className="p-1 hover:bg-white/20 rounded-md"><X className="h-3 w-3" /></button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Input placeholder="Ajouter un produit..." value={newProduct} onChange={(e) => setNewProduct(e.target.value)} className="h-12 rounded-xl" />
-                                        <Button type="button" onClick={addProduct} className="h-12 px-6 rounded-xl bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/10">Ajouter</Button>
-                                    </div>
+                                <div>
+                                    <CardTitle className="text-[14px] font-bold uppercase tracking-widest text-slate-900">Profil Entreprise</CardTitle>
+                                    <CardDescription className="text-[12px] font-medium text-slate-400">Gérez les détails de votre organisation.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-8">
+                            <form action={onSubmit} className="space-y-8">
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Raison Sociale</Label>
+                                    <Input
+                                        name="name"
+                                        defaultValue={profile.name}
+                                        placeholder="Ex: AgriCorp S.A."
+                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                    />
                                 </div>
 
-                                <div className="space-y-4">
-                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RÉGIONS CIBLÉES</Label>
-                                    <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl">
-                                        {targetRegions.map(r => (
-                                            <Badge key={r} className="bg-slate-100 text-slate-700 pl-4 pr-2 py-2 rounded-xl flex items-center gap-2 border-none">
-                                                {r}
-                                                <button type="button" onClick={() => setTargetRegions(targetRegions.filter(x => x !== r))} className="p-1 hover:bg-slate-200 rounded-md text-slate-400"><X className="h-3 w-3" /></button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Input placeholder="Ajouter une région..." value={newRegion} onChange={(e) => setNewRegion(e.target.value)} className="h-12 rounded-xl" />
-                                        <Button type="button" onClick={addRegion} className="h-12 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-none shadow-sm">Ajouter</Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="contact" className="space-y-6 outline-none">
-                        <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-                            <CardHeader className="p-8 border-b border-slate-50">
-                                <CardTitle className="text-xl font-black text-slate-900 tracking-tight">CONTACT & WEB</CardTitle>
-                                <CardDescription>Comment les partenaires peuvent vous joindre.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="businessEmail" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email d'achat</Label>
-                                        <Input id="businessEmail" name="businessEmail" type="email" defaultValue={profile.businessEmail} className="h-12 rounded-xl bg-slate-50 border-none font-medium" />
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Ville Siège</Label>
+                                        <Input
+                                            name="city"
+                                            defaultValue={profile.city}
+                                            placeholder="Casablanca, Rabat..."
+                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="phone" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Téléphone Professional</Label>
-                                        <Input id="phone" name="phone" defaultValue={profile.phone} className="h-12 rounded-xl bg-slate-50 border-none font-medium" />
-                                    </div>
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="website" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Web / Portfolio B2B</Label>
-                                        <div className="relative">
-                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <Input id="website" name="website" defaultValue={profile.website} className="h-12 rounded-xl bg-slate-50 border-none pl-12 font-medium" placeholder="https://..." />
-                                        </div>
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Téléphone</Label>
+                                        <Input
+                                            name="phone"
+                                            defaultValue={profile.phone}
+                                            placeholder="+212 5... "
+                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        />
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
 
-                <div className="mt-10 flex justify-end">
-                    <Button
-                        type="submit"
-                        disabled={isSaving}
-                        className="h-14 px-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs tracking-[2px] shadow-xl shadow-slate-900/10 active:scale-95 transition-all"
-                    >
-                        {isSaving ? (
-                            <><Loader2 className="h-4 w-4 mr-3 animate-spin" /> ENREGISTREMENT...</>
-                        ) : (
-                            "SAUVEGARDER LES MODIFICATIONS"
-                        )}
-                    </Button>
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Adresse Locale</Label>
+                                    <Input
+                                        name="address"
+                                        defaultValue={profile.address}
+                                        placeholder="N° 45, Av. des FAR..."
+                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Site Web</Label>
+                                    <Input
+                                        name="website"
+                                        defaultValue={profile.website || ""}
+                                        placeholder="https://www.agricorp.ma"
+                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                    />
+                                </div>
+
+                                <div className="pt-4 flex justify-end">
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="h-11 px-8"
+                                    >
+                                        {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Enregistrer les modifications"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
                 </div>
-            </form>
-        </div>
+
+                <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
+                        <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl ring-1 ring-slate-100 mb-6">
+                            <AvatarImage src={profile.logoUrl || ""} className="object-cover" />
+                            <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.name}</h3>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Espace Entreprise</p>
+
+                        <div className="w-full mt-8 pt-6 border-t border-slate-100 space-y-4 text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                    <MapPin className="size-3.5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Siège</span>
+                                    <span className="text-[12px] font-bold text-slate-900">{profile.city}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                    <Globe className="size-3.5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Visibilité</span>
+                                    <span className="text-[12px] font-bold text-slate-900">Publique</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 p-4 rounded-xl bg-emerald-50 border border-emerald-100 flex items-start gap-3 text-left">
+                            <ShieldCheck className="size-4 text-emerald-500 shrink-0 mt-0.5" />
+                            <p className="text-[11px] font-bold text-emerald-800 leading-relaxed uppercase tracking-tight">
+                                Boostez votre crédibilité
+                            </p>
+                            <p className="text-[11px] font-medium text-emerald-700 leading-relaxed mt-1">
+                                Un profil complet rassure les agriculteurs et facilite la signature de nouveaux contrats.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3 text-left">
+                            <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
+                            <p className="text-[11px] font-medium text-blue-800 leading-relaxed">
+                                Les informations de votre entreprise sont essentielles pour la facturation et les contrats officiels.
+                            </p>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        </main>
     );
 }
