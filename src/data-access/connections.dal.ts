@@ -161,6 +161,7 @@ export const getOutgoingRequests = cache(async (profileId: string, role: "FARMER
                 senderLogo: farmer.avatarUrl,
                 senderRole: "FARMER",
                 sentAt: req.createdAt,
+                status: req.status as any,
                 location: `${farmer.city}, ${farmer.region}`,
                 production: farmer.avgAnnualProduction,
                 farmName: farmer.farmName,
@@ -184,6 +185,7 @@ export const getOutgoingRequests = cache(async (profileId: string, role: "FARMER
                 senderIndustry: company.industry,
                 senderRole: "COMPANY",
                 sentAt: req.createdAt,
+                status: req.status as any,
             };
         }
     });
