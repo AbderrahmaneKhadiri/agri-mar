@@ -30,44 +30,47 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
 
     if (requests.length === 0) {
         return (
-            <div className="h-96 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed rounded-3xl bg-white/50">
-                <Building2 className="w-12 h-12 mb-4 opacity-20" />
-                <p className="font-medium">Aucune demande de partenariat en attente.</p>
-            </div>
+            <Card className="h-64 flex border border-slate-200 rounded-2xl bg-white shadow-sm mt-6">
+                <CardContent className="flex flex-col items-center justify-center flex-1 p-0">
+                    <Building2 className="w-10 h-10 mb-4 opacity-20" />
+                    <p className="font-bold uppercase tracking-widest text-[10px] text-slate-400">Aucune demande de partenariat en attente.</p>
+                </CardContent>
+            </Card>
         );
     }
 
     return (
         <div className="grid gap-4">
             {requests.map((request) => (
-                <Card key={request.id} className="border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
-                    <CardContent className="p-6">
+                <Card key={request.id} className="border border-slate-200 shadow-sm hover:shadow-md transition-all bg-white rounded-2xl">
+                    <CardContent className="p-6 md:p-8">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-16 w-16 border-2 border-slate-100">
+                            <div className="flex items-center gap-6">
+                                <Avatar className="h-16 w-16 border border-slate-100 rounded-2xl">
                                     <AvatarImage src={request.senderLogo || ""} alt={request.senderName} />
-                                    <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xl">
-                                        {request.senderName.charAt(0)}
+                                    <AvatarFallback className="bg-slate-50 flex items-center justify-center text-2xl font-black text-slate-300 rounded-2xl">
+                                        {request.senderName?.charAt(0)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <h4 className="text-lg font-bold text-slate-900">{request.senderName}</h4>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">
-                                            {request.senderIndustry || "Entreprise"}
+                                    <h4 className="text-xl font-black text-slate-900 tracking-tight">{request.senderName}</h4>
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-[1.5px]">
+                                            {request.senderIndustry || "Secteur d'activité non défini"}
                                         </span>
-                                        <span className="flex items-center text-xs text-slate-400 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                        <span className="flex items-center text-[9px] text-slate-400 font-bold uppercase tracking-[1px]">
                                             <Calendar className="h-3 w-3 mr-1" />
-                                            Reçue le {format(new Date(request.sentAt), "d MMMM yyyy", { locale: fr })}
+                                            {format(new Date(request.sentAt), "d MMM yyyy", { locale: fr })}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-end gap-3 flex-wrap md:flex-nowrap w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t border-slate-50 md:border-none">
                                 <Button
                                     variant="outline"
-                                    className="flex-1 md:flex-none border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 h-11 px-6 rounded-xl font-bold transition-colors"
+                                    className="flex-1 md:flex-none flex items-center justify-center border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-[1.5px] transition-colors"
                                     onClick={() => handleAction(request.id, "REJECTED")}
                                     disabled={!!isProcessing}
                                 >
@@ -75,7 +78,7 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                     Refuser
                                 </Button>
                                 <Button
-                                    className="flex-1 md:flex-none bg-green-600 hover:bg-green-500 text-white h-11 px-8 rounded-xl font-bold shadow-lg shadow-green-900/10 transition-all border-none"
+                                    className="flex-1 md:flex-none flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-8 rounded-xl text-[10px] font-black uppercase tracking-[1.5px] shadow-sm transition-all border-none"
                                     onClick={() => handleAction(request.id, "ACCEPTED")}
                                     disabled={!!isProcessing}
                                 >
@@ -84,7 +87,7 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                     ) : (
                                         <>
                                             <Check className="h-4 w-4 mr-2" />
-                                            Accepter
+                                            Autoriser l'accès
                                         </>
                                     )}
                                 </Button>

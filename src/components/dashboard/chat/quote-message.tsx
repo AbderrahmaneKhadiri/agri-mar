@@ -61,21 +61,21 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
 
     return (
         <Card className={cn(
-            "w-full max-w-[320px] rounded-3xl border-none shadow-xl overflow-hidden transition-all",
-            status === "PENDING" ? "bg-white" : "opacity-80"
+            "w-full max-w-[320px] rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all",
+            status === "PENDING" ? "bg-white" : "opacity-90"
         )}>
             <CardHeader className={cn(
                 "p-4 flex flex-row items-center justify-between",
-                status === "ACCEPTED" ? "bg-green-600" :
+                status === "ACCEPTED" ? "bg-emerald-600" :
                     status === "DECLINED" ? "bg-red-600" : "bg-slate-900"
             )}>
                 <div className="flex items-center gap-2">
                     <div className="bg-white/10 p-1.5 rounded-lg">
-                        <FileText className="h-4 w-4 text-white" />
+                        <FileText className="h-3.5 w-3.5 text-white" />
                     </div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">OFFRE COMMERCIALE</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-widest">OFFRE COMMERCIALE</span>
                 </div>
-                <Badge variant="outline" className="border-white/20 text-white font-bold text-[9px] uppercase tracking-tighter">
+                <Badge variant="outline" className="border-white/20 text-white font-bold text-[8px] uppercase px-2 py-0.5">
                     {status === "PENDING" ? "En attente" :
                         status === "ACCEPTED" ? "Acceptée" : "Refusée"}
                 </Badge>
@@ -84,40 +84,40 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
             <CardContent className="p-5 space-y-4">
                 <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                        <div className="bg-slate-50 p-2 rounded-xl">
-                            <Package className="h-4 w-4 text-slate-400" />
+                        <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl">
+                            <Package className="h-3.5 w-3.5 text-slate-400" />
                         </div>
                         <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Produit</p>
-                            <p className="text-sm font-black text-slate-900 leading-tight uppercase tracking-tight">{quote.productName}</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Produit</p>
+                            <p className="text-[13px] font-bold text-slate-900 leading-tight capitalize">{quote.productName?.toLowerCase()}</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-start gap-3">
-                            <div className="bg-slate-50 p-2 rounded-xl">
-                                <ArrowRight className="h-4 w-4 text-slate-400" />
+                            <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl">
+                                <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Quantité</p>
-                                <p className="text-sm font-bold text-slate-900">{quote.quantity}</p>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Quantité</p>
+                                <p className="text-[13px] font-bold text-slate-900">{quote.quantity}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
-                            <div className="bg-slate-50 p-2 rounded-xl">
-                                <Banknote className="h-4 w-4 text-slate-400" />
+                            <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl">
+                                <Banknote className="h-3.5 w-3.5 text-slate-400" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Prix Unit.</p>
-                                <p className="text-sm font-bold text-slate-900">{quote.unitPrice} {quote.currency}</p>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Prix Unit.</p>
+                                <p className="text-[13px] font-bold text-slate-900">{quote.unitPrice} {quote.currency}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 flex justify-between items-center border border-slate-100">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Montant Total</span>
-                    <span className="text-base font-black text-slate-900 tracking-tighter">{parseFloat(quote.totalAmount).toLocaleString()} {quote.currency}</span>
+                <div className="p-4 rounded-xl bg-slate-50 flex justify-between items-center border border-slate-100">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Montant Total</span>
+                    <span className="text-sm font-extrabold text-slate-900 tracking-tight">{parseFloat(quote.totalAmount).toLocaleString()} {quote.currency}</span>
                 </div>
 
                 {quote.notes && (
@@ -135,7 +135,7 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                         variant="ghost"
                         onClick={() => handleRespond("DECLINED")}
                         disabled={!!loading}
-                        className="rounded-xl h-10 font-bold text-red-600 uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-700 bg-red-50/50"
+                        className="rounded-xl h-10 font-bold text-red-600 uppercase tracking-widest text-[8px] hover:bg-red-50 hover:text-red-700 bg-red-50/30"
                     >
                         {loading === "DECLINED" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refuser"}
                     </Button>
@@ -143,9 +143,9 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                         size="sm"
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={!!loading}
-                        className="rounded-xl h-10 bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-green-200"
+                        className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-widest text-[8px] border-none shadow-sm"
                     >
-                        {loading === "ACCEPTED" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accepter l'offre"}
+                        {loading === "ACCEPTED" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accepter"}
                     </Button>
                 </CardFooter>
             )}
@@ -156,10 +156,10 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                         size="sm"
                         variant="outline"
                         onClick={handleDownload}
-                        className="w-full rounded-xl h-10 border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[9px] hover:bg-slate-50 flex items-center gap-2"
+                        className="w-full rounded-xl h-10 border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[8px] hover:bg-slate-50 flex items-center gap-2"
                     >
                         <Download className="h-3 w-3" />
-                        Télécharger le document PDF
+                        Télécharger le devis (PDF)
                     </Button>
                 </CardFooter>
             )}

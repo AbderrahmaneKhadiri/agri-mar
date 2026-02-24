@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, MessageSquare, Users, Settings } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, MessageSquare, Users, Settings, PackageOpen } from "lucide-react";
 
 export type NavItem = {
     title: string;
@@ -8,9 +8,14 @@ export type NavItem = {
 
 export const FARMER_NAV_ITEMS: NavItem[] = [
     {
-        title: "Tableau de bord",
+        title: "Tableau de dashboard",
         href: "/dashboard/farmer",
         icon: LayoutDashboard,
+    },
+    {
+        title: "Mes Produits",
+        href: "/dashboard/farmer/products",
+        icon: PackageOpen,
     },
     {
         title: "Mes Demandes",
@@ -39,6 +44,11 @@ export const COMPANY_NAV_ITEMS: NavItem[] = [
         title: "Marché Agricole",
         href: "/dashboard/company/market",
         icon: ShoppingCart,
+    },
+    {
+        title: "Catalogue Produits",
+        href: "/dashboard/company/products",
+        icon: PackageOpen,
     },
     {
         title: "Mes Demandes",

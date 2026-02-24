@@ -17,12 +17,7 @@ export default async function MessagesPage() {
     const partners = await getAcceptedPartners(profile.id, "FARMER");
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Messagerie</h1>
-                <p className="text-slate-500 mt-2">Communiquez avec vos partenaires commerciaux en toute sécurité.</p>
-            </div>
-
+        <div className="h-[calc(100vh-6rem)]">
             <ChatInterface
                 partners={partners}
                 currentUserId={session.user.id}

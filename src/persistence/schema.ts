@@ -9,6 +9,8 @@ export const quoteStatusEnum = pgEnum("quote_status", ["PENDING", "ACCEPTED", "D
 export const orderStatusEnum = pgEnum("order_status", ["DRAFT", "SIGNED", "DELIVERED", "PAID", "CANCELLED"]);
 export const marketTypeEnum = pgEnum("market_type", ["LOCAL", "INTERNATIONAL", "BOTH"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["CONNECTION_REQUEST", "NEW_MESSAGE", "CONNECTION_ACCEPTED", "NEW_QUOTE", "QUOTE_ACCEPTED"]);
+export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "SOLD_OUT", "DRAFT"]);
+export const productUnitEnum = pgEnum("product_unit", ["KG", "TONNE", "LITRE", "UNITE", "BOITE", "PALETTE"]);
 
 // --- USERS (Managed by Better-Auth) ---
 export const user = pgTable("user", {
@@ -185,6 +187,23 @@ export const farmerPhotos = pgTable("farmer_photos", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- RETAIL PRODUCTS (Marketplace B2C/B2B) ---
+export const products = pgTable("products", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    price: decimal("price").notNull(),
+    unit: productUnitEnum("unit").default("KG").notNull(),
+    minOrderQuantity: decimal("min_order_quantity").default("1").notNull(),
+    stockQuantity: decimal("stock_quantity").notNull(),
+    category: text("category").notNull(),
+    images: jsonb("images").default([]).notNull().$type<string[]>(),
+    status: productStatusEnum("status").default("ACTIVE").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // --- REVIEWS (Trust System) ---
 export const reviews = pgTable("reviews", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -208,6 +227,7 @@ export const farmerProfileRelations = relations(farmerProfiles, ({ one, many }) 
     user: one(user, { fields: [farmerProfiles.userId], references: [user.id] }),
     connections: many(connections),
     photos: many(farmerPhotos),
+    products: many(products),
 }));
 
 export const companyProfileRelations = relations(companyProfiles, ({ one, many }) => ({
@@ -243,4 +263,8 @@ export const farmerPhotoRelations = relations(farmerPhotos, ({ one }) => ({
 export const reviewRelations = relations(reviews, ({ one }) => ({
     reviewer: one(user, { fields: [reviews.fromUserId], references: [user.id], relationName: "reviewer" }),
     reviewee: one(user, { fields: [reviews.toUserId], references: [user.id], relationName: "reviewee" }),
+}));
+
+export const productRelations = relations(products, ({ one }) => ({
+    farmer: one(farmerProfiles, { fields: [products.farmerId], references: [farmerProfiles.id] }),
 }));

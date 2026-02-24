@@ -16,14 +16,6 @@ export default async function MarketplacePage({
     });
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">Marché Agricole</h1>
-                <p className="text-slate-500">Découvrez et connectez-vous avec les meilleurs agriculteurs du Maroc.</p>
-            </div>
-
-            {/* Content area - The interactive client component */}
-            <FarmerMarketClient initialFarmers={initialFarmers} />
-        </div>
+        <FarmerMarketClient initialFarmers={initialFarmers} />
     );
 }

@@ -2,6 +2,8 @@ import 'server-only'; // Assure que ce code ne "leak" jamais côté client
 import { cache } from 'react';
 import { getFarmerByIdFromDb, getFarmersFromDb, FarmerFilters } from '@/persistence/data-access/farmers.db';
 // import { auth } from '@/lib/auth'; // Si on devait récupérer la session ici
+import { farmerRepository } from '@/persistence/repositories/farmer.repository';
+import { reviewRepository } from '@/persistence/repositories/review.repository';
 
 /**
  * DTO (Data Transfer Object) pour la liste des agriculteurs.
@@ -102,5 +104,27 @@ export const getFarmerDetails = cache(async (farmerId: string, companyId?: strin
             phone: farmer.phone,
             businessEmail: farmer.businessEmail,
         } : undefined,
+    };
+});
+
+// ----- New DAL functions for photos and reviews -----
+/** Fetch photos for a given farmer ID */
+export const getFarmerPhotos = cache(async (farmerId: string): Promise<any[]> => {
+    const photos = await farmerRepository.getPhotos(farmerId);
+    return photos;
+});
+
+/** Fetch reviews for a given farmer (recipient) user ID */
+export const getFarmerReviews = cache(async (farmerUserId: string): Promise<any[]> => {
+    const reviews = await reviewRepository.findByRecipientId(farmerUserId);
+    return reviews;
+});
+
+/** Fetch average rating and count for a farmer */
+export const getFarmerAverageRating = cache(async (farmerUserId: string): Promise<{ average: number | null; count: number }> => {
+    const result = await reviewRepository.getAverageRating(farmerUserId);
+    return {
+        average: result?.average !== null && result?.average !== undefined ? Number(result.average) : null,
+        count: Number(result?.count ?? 0),
     };
 });

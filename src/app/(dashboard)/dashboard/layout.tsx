@@ -23,9 +23,9 @@ export default async function DashboardLayout({
             <Sidebar />
 
             {/* Main Content Area */}
-            <main className="flex-1 ml-64 p-6">
+            <main className="flex-1 ml-[280px] p-8">
                 {/* Content inner container */}
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-[1400px] mx-auto">
                     {children}
                 </div>
             </main>

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { quoteRepository } from "@/persistence/repositories/quote.repository";
 import { notificationRepository } from "@/persistence/repositories/notification.repository";
 import { revalidatePath } from "next/cache";
+import { pusherServer } from "@/lib/pusher";
 
 /**
  * Crée un nouveau devis.
@@ -38,15 +39,38 @@ export async function createQuoteAction(formData: {
                 ? fullQuote.connection.company.userId
                 : fullQuote.connection.farmer.userId;
 
+            // Déclencher Pusher pour le Chat (Temps Réel)
+            try {
+                await pusherServer.trigger(
+                    `chat-${formData.connectionId}`,
+                    "new-message",
+                    {
+                        ...quote,
+                        type: "QUOTE",
+                        sender: {
+                            id: session.user.id,
+                            name: session.user.name,
+                            image: session.user.image,
+                            role: session.user.role,
+                        }
+                    }
+                );
+            } catch (pusherError) {
+                console.error("Pusher Error (Quote):", pusherError);
+            }
+
             if (recipientUserId) {
                 try {
-                    await notificationRepository.create({
+                    const notify = await notificationRepository.create({
                         userId: recipientUserId,
                         type: "NEW_QUOTE",
                         title: "Nouveau devis reçu",
                         description: `${session.user.name} vous a envoyé une proposition commerciale pour ${formData.productName}.`,
                         link: session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages"
                     });
+
+                    // Pusher pour la cloche de notification
+                    await pusherServer.trigger(`user-${recipientUserId}`, "new-notification", notify);
                 } catch (notifyError) {
                     console.error("Non-blocking notification error (createQuoteAction):", notifyError);
                 }
@@ -88,16 +112,33 @@ export async function respondToQuoteAction(quoteId: string, response: "ACCEPTED"
 
         if (response === "ACCEPTED") {
             try {
-                await notificationRepository.create({
+                const notify = await notificationRepository.create({
                     userId: quote.senderUserId,
                     type: "QUOTE_ACCEPTED",
                     title: "Devis accepté !",
                     description: `${session.user.name} a accepté votre devis pour ${quote.productName}.`,
                     link: session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages"
                 });
+
+                // Pusher pour la cloche de notification
+                await pusherServer.trigger(`user-${quote.senderUserId}`, "new-notification", notify);
             } catch (notifyError) {
                 console.error("Non-blocking notification error (respondToQuoteAction):", notifyError);
             }
+        }
+
+        // Déclencher Pusher pour mettre à jour le statut du devis dans le chat du partenaire
+        try {
+            await pusherServer.trigger(
+                `chat-${quote.connectionId}`,
+                "quote-status-update",
+                {
+                    quoteId,
+                    status: response
+                }
+            );
+        } catch (pusherError) {
+            console.error("Pusher Error (Quote Status Change):", pusherError);
         }
 
         revalidatePath("/dashboard");
