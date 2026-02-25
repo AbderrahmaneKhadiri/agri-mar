@@ -25,7 +25,6 @@ export async function createFarmerProfile(
         const profileToInsert = {
             userId,
             ...validatedData.data,
-            totalAreaHectares: validatedData.data.totalAreaHectares.toString(),
             updatedAt: new Date(),
         };
 

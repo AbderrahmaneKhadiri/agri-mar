@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { companyRepository } from "@/persistence/repositories/company.repository";
@@ -37,7 +38,7 @@ export default async function CompanyDashboardPage() {
     if (!session?.user) return null;
 
     const profile = await companyRepository.findByUserId(session.user.id);
-    if (!profile) return <div>Profil non trouvé</div>;
+    if (!profile) redirect("/onboarding/company");
 
     // Parallel data fetching for performance
     const [suppliers, marketOffers, requests, marketChartData] = await Promise.all([

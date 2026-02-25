@@ -246,7 +246,7 @@ export default function FarmerOnboardingPage() {
                                     <Label htmlFor="totalAreaHectares" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Surface Totale (Hectares)</Label>
                                     <div className="flex items-center gap-6">
                                         <div className="relative">
-                                            <Input id="totalAreaHectares" name="totalAreaHectares" type="number" step="0.1" placeholder="10.5" required={step === 2} className="h-14 bg-white border border-slate-200 rounded-2xl pl-12 pr-6 text-xl font-extrabold text-emerald-700 w-36 shadow-sm focus:ring-2 focus:ring-emerald-100 transition-all" />
+                                            <Input id="totalAreaHectares" name="totalAreaHectares" type="number" step="0.1" placeholder="10.5" className="h-14 bg-white border border-slate-200 rounded-2xl pl-12 pr-6 text-xl font-extrabold text-emerald-700 w-36 shadow-sm focus:ring-2 focus:ring-emerald-100 transition-all" />
                                             <LandPlot className="absolute left-4 top-4.5 size-5 text-emerald-300" />
                                         </div>
                                         <div className="text-[12px] font-medium text-slate-400 leading-relaxed max-w-xs">

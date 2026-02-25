@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
@@ -65,7 +66,7 @@ export default async function FarmerDashboardPage() {
     if (!session?.user) return null;
 
     const profile = await farmerRepository.findByUserId(session.user.id);
-    if (!profile) return <div>Profil non trouvé</div>;
+    if (!profile) redirect("/onboarding/farmer");
 
     // Fetch farmer-specific metrics using DALs
     const [myProducts, acceptedPartners, incomingRequests] = await Promise.all([
@@ -83,7 +84,7 @@ export default async function FarmerDashboardPage() {
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — CENTRE DE PILOTAGE</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.farmName}</span>
+                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.farmName || "--"}</span>
                     <span className={cn(
                         "text-[8px] font-black px-2 py-0.5 rounded uppercase",
                         calculateFarmerScore(profile) >= 80 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
@@ -98,7 +99,7 @@ export default async function FarmerDashboardPage() {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Bienvenue, {profile.fullName.split(' ')[0]}</h1>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Bienvenue, {(profile.fullName || "Agriculteur").split(' ')[0]}</h1>
                 <p className="text-slate-500 mt-2 font-medium max-w-3xl leading-relaxed">
                     Que vous soyez en phase de <strong className="text-slate-700 font-bold underline decoration-emerald-200/50">négociation contractuelle</strong> avec de grandes industries ou en vente <strong className="text-slate-700 font-bold underline decoration-emerald-200/50">directe aux acheteurs locaux</strong> (hôtels, restaurants, marchés), pilotez l&apos;ensemble de votre exploitation ici.
                 </p>
