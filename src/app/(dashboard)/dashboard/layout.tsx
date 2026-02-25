@@ -34,7 +34,7 @@ export default async function DashboardLayout({
         <SidebarProvider>
             <AppSidebar
                 profileName={profileName}
-                role={session.user.role}
+                role={session.user.role as "FARMER" | "COMPANY"}
                 userEmail={session.user.email}
                 userAvatar={session.user.image}
             />

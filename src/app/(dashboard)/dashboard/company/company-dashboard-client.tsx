@@ -44,8 +44,30 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { calculateCompanyScore } from "@/lib/utils/profile-score";
 
+interface CompanyProfile {
+    id: string;
+    companyName: string;
+    companyType: string | null;
+    city: string;
+    industry: string;
+    establishedYear: number;
+    iceNumber: string | null;
+    rcNumber: string | null;
+    purchasingCapacity: string;
+    partnershipType: string;
+    phone: string;
+    businessEmail: string;
+    website?: string | null;
+    desiredProducts: string[];
+    avgDesiredQuantity: string;
+    marketType: string;
+    exportCountries: string[];
+    requiredCertifications: string[];
+    targetRegions: string[];
+}
+
 interface CompanyDashboardClientProps {
-    companyProfile: any;
+    companyProfile: CompanyProfile;
     initialSuppliers: PartnerDTO[];
     initialMarketOffers: (ProductSelectDTO & { farmer: any })[];
     initialRequests: IncomingRequestDTO[];
