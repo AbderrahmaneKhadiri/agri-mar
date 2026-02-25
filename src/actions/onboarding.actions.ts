@@ -22,7 +22,37 @@ export async function submitFarmerOnboardingAction(prevState: any, formData: For
 
         // 2. Extraction & Validation (Presentation Layer)
         const rawData = Object.fromEntries(formData);
-        const parsed = farmerProfileSchema.safeParse(rawData);
+
+        // Handle arrays and booleans manually as Object.fromEntries is too simple
+        const cropTypes = formData.getAll("cropTypes") as string[];
+        const certifications = formData.getAll("certifications") as string[];
+        const farmingMethods = formData.getAll("farmingMethods") as string[];
+        const seasonAvailability = formData.getAll("seasonAvailability") as string[];
+        const irrigationType = formData.getAll("irrigationType") as string[];
+        const businessModel = formData.getAll("businessModel") as string[];
+
+        const hasColdStorage = formData.get("hasColdStorage") === "true" || formData.get("hasColdStorage") === "on";
+        const deliveryCapacity = formData.get("deliveryCapacity") === "true" || formData.get("deliveryCapacity") === "on";
+        const exportCapacity = formData.get("exportCapacity") === "true" || formData.get("exportCapacity") === "on";
+        const logisticsCapacity = formData.get("logisticsCapacity") === "true" || formData.get("logisticsCapacity") === "on";
+        const longTermContractAvailable = formData.get("longTermContractAvailable") === "true" || formData.get("longTermContractAvailable") === "on";
+
+        const dataToValidate = {
+            ...rawData,
+            cropTypes,
+            certifications,
+            farmingMethods,
+            seasonAvailability,
+            irrigationType,
+            businessModel: businessModel.length > 0 ? businessModel : ["Direct Sales"],
+            hasColdStorage,
+            deliveryCapacity,
+            exportCapacity,
+            logisticsCapacity,
+            longTermContractAvailable,
+        };
+
+        const parsed = farmerProfileSchema.safeParse(dataToValidate);
 
         if (!parsed.success) {
             return { error: "Données invalides", fields: parsed.error.flatten().fieldErrors };
@@ -58,7 +88,20 @@ export async function submitCompanyOnboardingAction(prevState: any, formData: Fo
 
         // 2. Extraction & Validation
         const rawData = Object.fromEntries(formData);
-        const parsed = companyProfileSchema.safeParse(rawData);
+
+        // Handle optional arrays if any (none yet for company in basic onboarding but for safety)
+        const desiredProducts = formData.getAll("desiredProducts") as string[];
+        const targetRegions = formData.getAll("targetRegions") as string[];
+        const requiredCertifications = formData.getAll("requiredCertifications") as string[];
+
+        const dataToValidate = {
+            ...rawData,
+            desiredProducts: desiredProducts.length > 0 ? desiredProducts : [],
+            targetRegions: targetRegions.length > 0 ? targetRegions : [],
+            requiredCertifications: requiredCertifications.length > 0 ? requiredCertifications : [],
+        };
+
+        const parsed = companyProfileSchema.safeParse(dataToValidate);
 
         if (!parsed.success) {
             return { error: "Données invalides", fields: parsed.error.flatten().fieldErrors };

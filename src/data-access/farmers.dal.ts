@@ -21,6 +21,20 @@ export type FarmerListDTO = {
     certifications: string[];
     farmingMethods: string[];
     avgAnnualProduction: string;
+    iceNumber: string | null;
+    onssaCert: string | null;
+    irrigationType: string | null;
+    hasColdStorage: boolean;
+    deliveryCapacity: boolean;
+    businessModel: string[] | null;
+    availableProductionVolume: string;
+    seasonAvailability: string[];
+    exportCapacity: boolean;
+    logisticsCapacity: boolean;
+    longTermContractAvailable: boolean;
+    livestockType?: string | null;
+    phone?: string;
+    businessEmail?: string;
 };
 
 /**
@@ -47,6 +61,20 @@ export const getFarmersList = cache(async (filters?: FarmerFilters): Promise<Far
         certifications: farmer.certifications,
         farmingMethods: farmer.farmingMethods,
         avgAnnualProduction: farmer.avgAnnualProduction,
+        iceNumber: farmer.iceNumber,
+        onssaCert: farmer.onssaCert,
+        irrigationType: farmer.irrigationType,
+        hasColdStorage: farmer.hasColdStorage ?? false,
+        deliveryCapacity: farmer.deliveryCapacity ?? false,
+        businessModel: farmer.businessModel,
+        availableProductionVolume: farmer.availableProductionVolume,
+        seasonAvailability: farmer.seasonAvailability,
+        exportCapacity: farmer.exportCapacity,
+        logisticsCapacity: farmer.logisticsCapacity,
+        longTermContractAvailable: farmer.longTermContractAvailable,
+        livestockType: farmer.livestockType,
+        phone: farmer.phone,
+        businessEmail: farmer.businessEmail,
     }));
 });
 
@@ -69,6 +97,18 @@ export type FarmerDetailDTO = {
         phone: string;
         businessEmail: string;
     };
+    iceNumber: string | null;
+    onssaCert: string | null;
+    irrigationType: string | null;
+    hasColdStorage: boolean;
+    deliveryCapacity: boolean;
+    businessModel: string[] | null;
+    seasonAvailability: string[];
+    exportCapacity: boolean;
+    logisticsCapacity: boolean;
+    longTermContractAvailable: boolean;
+    livestockType?: string | null;
+    avgAnnualProduction: string;
 };
 
 import { checkConnectionStatus } from '@/persistence/data-access/connections.db';
@@ -104,6 +144,18 @@ export const getFarmerDetails = cache(async (farmerId: string, companyId?: strin
             phone: farmer.phone,
             businessEmail: farmer.businessEmail,
         } : undefined,
+        iceNumber: farmer.iceNumber,
+        onssaCert: farmer.onssaCert,
+        irrigationType: farmer.irrigationType,
+        hasColdStorage: farmer.hasColdStorage ?? false,
+        deliveryCapacity: farmer.deliveryCapacity ?? false,
+        businessModel: farmer.businessModel,
+        seasonAvailability: farmer.seasonAvailability,
+        exportCapacity: farmer.exportCapacity,
+        logisticsCapacity: farmer.logisticsCapacity,
+        longTermContractAvailable: farmer.longTermContractAvailable,
+        livestockType: farmer.livestockType,
+        avgAnnualProduction: farmer.avgAnnualProduction,
     };
 });
 

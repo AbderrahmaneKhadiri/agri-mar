@@ -32,10 +32,15 @@ export default async function DashboardLayout({
 
     return (
         <SidebarProvider>
-            <AppSidebar profileName={profileName} />
+            <AppSidebar
+                profileName={profileName}
+                role={session.user.role}
+                userEmail={session.user.email}
+                userAvatar={session.user.image}
+            />
             <SidebarInset>
                 <SiteHeader userId={session.user.id} />
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                <div className="flex flex-1 flex-col gap-4 p-4">
                     <div className="mx-auto w-full max-w-[1400px]">
                         {children}
                     </div>

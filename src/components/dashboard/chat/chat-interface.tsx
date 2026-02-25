@@ -30,14 +30,16 @@ import { fr } from "date-fns/locale";
 import { pusherClient } from "@/lib/pusher-client";
 import { QuoteForm } from "./quote-form";
 import { QuoteMessage } from "./quote-message";
+import { ProductInquiryCard } from "./product-inquiry-card";
 import { Separator } from "@/components/ui/separator";
 
 interface ChatItem {
     id: string;
-    type: "MESSAGE" | "QUOTE";
+    type: "MESSAGE" | "QUOTE" | "PRODUCT_INQUIRY";
     content?: string;
     senderUserId: string;
     createdAt: Date;
+    metadata?: any;
     sender?: {
         id: string;
         name: string;
@@ -262,6 +264,17 @@ export function ChatInterface({
                                             return (
                                                 <div key={item.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                                                     <QuoteMessage quote={item} currentUserId={currentUserId} />
+                                                </div>
+                                            );
+                                        }
+
+                                        if (item.type === "PRODUCT_INQUIRY") {
+                                            return (
+                                                <div key={item.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                    <ProductInquiryCard metadata={item.metadata} isMe={isMe} />
+                                                    <div className={cn("mt-1.5 flex items-center gap-1.5", isMe ? "justify-end" : "justify-start")}>
+                                                        <span className="text-[9px] font-bold text-slate-400 uppercase">{format(new Date(item.createdAt), "HH:mm")}</span>
+                                                    </div>
                                                 </div>
                                             );
                                         }

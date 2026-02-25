@@ -36,11 +36,22 @@ import {
   COMMON_FOOTER_NAV_ITEMS,
 } from "@/lib/config/navigation"
 
-export function AppSidebar({ profileName, ...props }: React.ComponentProps<typeof Sidebar> & { profileName?: string }) {
+export function AppSidebar({
+  profileName,
+  role: initialRole,
+  userEmail,
+  userAvatar,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  profileName?: string,
+  role?: "FARMER" | "COMPANY",
+  userEmail?: string | null,
+  userAvatar?: string | null
+}) {
   const { data: session } = useSession()
   const pathname = usePathname()
 
-  const role = session?.user?.role as "FARMER" | "COMPANY" | undefined
+  const role = initialRole || session?.user?.role as "FARMER" | "COMPANY" | undefined
   const rawNavItems = role === "FARMER" ? FARMER_NAV_ITEMS : COMPANY_NAV_ITEMS
 
   // Transform internal nav items to match Shadcn block structure
@@ -59,8 +70,8 @@ export function AppSidebar({ profileName, ...props }: React.ComponentProps<typeo
 
   const userData = {
     name: profileName || session?.user?.name || "Utilisateur",
-    email: session?.user?.email || "",
-    avatar: session?.user?.image || "",
+    email: userEmail || session?.user?.email || "",
+    avatar: userAvatar || session?.user?.image || "",
   }
 
   return (

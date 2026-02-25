@@ -8,7 +8,8 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogFooter
+    DialogFooter,
+    DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -101,14 +102,16 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[480px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
-                <div className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl">
+                <DialogHeader className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl space-y-0">
                     <div className="relative z-10">
-                        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">Catalogue</h3>
-                        <h2 className="text-xl font-bold tracking-tight leading-none text-white">
+                        <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">
+                            Catalogue
+                        </DialogDescription>
+                        <DialogTitle className="text-xl font-bold tracking-tight leading-none text-white">
                             {product ? "Modifier le Produit" : "Nouveau Produit"}
-                        </h2>
+                        </DialogTitle>
                     </div>
-                </div>
+                </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div className="space-y-1.5">

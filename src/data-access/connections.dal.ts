@@ -28,6 +28,17 @@ export type PartnerDTO = {
     seasonality?: string[];
     exportCapacity?: boolean;
     logistics?: boolean;
+    // B2B Qualification Details (Shared or Specific)
+    iceNumber?: string | null;
+    rcNumber?: string | null;
+    companyType?: string | null;
+    onssaCert?: string | null;
+    irrigationType?: string | null;
+    hasColdStorage?: boolean;
+    deliveryCapacity?: boolean;
+    businessModel?: string[] | null;
+    longTermContractAvailable?: boolean;
+    initialMessage?: string | null;
 };
 
 export type IncomingRequestDTO = {
@@ -52,6 +63,17 @@ export type IncomingRequestDTO = {
     seasonality?: string[];
     exportCapacity?: boolean;
     logistics?: boolean;
+    // B2B Qualification Details (Shared or Specific)
+    iceNumber?: string | null;
+    rcNumber?: string | null;
+    companyType?: string | null;
+    onssaCert?: string | null;
+    irrigationType?: string | null;
+    hasColdStorage?: boolean;
+    deliveryCapacity?: boolean;
+    businessModel?: string[] | null;
+    longTermContractAvailable?: boolean;
+    initialMessage?: string | null;
 };
 
 /**
@@ -72,6 +94,10 @@ export const getIncomingRequests = cache(async (profileId: string, role: "FARMER
                 sentAt: req.createdAt,
                 status: req.status as any,
                 location: company.city,
+                iceNumber: company.iceNumber,
+                rcNumber: company.rcNumber,
+                companyType: company.companyType,
+                initialMessage: req.initialMessage,
             };
         } else {
             const farmer = (req as any).farmer;
@@ -95,6 +121,14 @@ export const getIncomingRequests = cache(async (profileId: string, role: "FARMER
                 seasonality: farmer.seasonAvailability,
                 exportCapacity: farmer.exportCapacity,
                 logistics: farmer.logisticsCapacity,
+                iceNumber: farmer.iceNumber,
+                onssaCert: farmer.onssaCert,
+                irrigationType: farmer.irrigationType,
+                hasColdStorage: farmer.hasColdStorage ?? false,
+                deliveryCapacity: farmer.deliveryCapacity ?? false,
+                businessModel: farmer.businessModel,
+                longTermContractAvailable: farmer.longTermContractAvailable,
+                initialMessage: req.initialMessage,
             };
         }
     });
@@ -118,6 +152,9 @@ export const getAcceptedPartners = cache(async (profileId: string, role: "FARMER
                 role: "COMPANY",
                 since: conn.updatedAt,
                 location: `${company.city}, ${company.country}`,
+                iceNumber: company.iceNumber,
+                rcNumber: company.rcNumber,
+                companyType: company.companyType,
             };
         } else {
             const farmer = (conn as any).farmer;
@@ -141,6 +178,13 @@ export const getAcceptedPartners = cache(async (profileId: string, role: "FARMER
                 seasonality: farmer.seasonAvailability,
                 exportCapacity: farmer.exportCapacity,
                 logistics: farmer.logisticsCapacity,
+                iceNumber: farmer.iceNumber,
+                onssaCert: farmer.onssaCert,
+                irrigationType: farmer.irrigationType,
+                hasColdStorage: farmer.hasColdStorage ?? false,
+                deliveryCapacity: farmer.deliveryCapacity ?? false,
+                businessModel: farmer.businessModel,
+                longTermContractAvailable: farmer.longTermContractAvailable,
             };
         }
     });
@@ -175,6 +219,13 @@ export const getOutgoingRequests = cache(async (profileId: string, role: "FARMER
                 seasonality: farmer.seasonAvailability,
                 exportCapacity: farmer.exportCapacity,
                 logistics: farmer.logisticsCapacity,
+                iceNumber: farmer.iceNumber,
+                onssaCert: farmer.onssaCert,
+                irrigationType: farmer.irrigationType,
+                hasColdStorage: farmer.hasColdStorage ?? false,
+                deliveryCapacity: farmer.deliveryCapacity ?? false,
+                businessModel: farmer.businessModel,
+                longTermContractAvailable: farmer.longTermContractAvailable,
             };
         } else {
             const company = (req as any).company;
@@ -186,8 +237,10 @@ export const getOutgoingRequests = cache(async (profileId: string, role: "FARMER
                 senderRole: "COMPANY",
                 sentAt: req.createdAt,
                 status: req.status as any,
+                iceNumber: company.iceNumber,
+                rcNumber: company.rcNumber,
+                companyType: company.companyType,
             };
         }
     });
 });
-

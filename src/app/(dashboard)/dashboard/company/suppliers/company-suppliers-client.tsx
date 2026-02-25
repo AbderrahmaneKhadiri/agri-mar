@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { PartnerDTO } from "@/data-access/connections.dal";
+import { FarmerProfileModal } from "@/components/dashboard/company/farmer-profile-modal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,7 +21,10 @@ import {
     MoreHorizontal,
     Search,
     Filter,
-    ChevronDown
+    ChevronDown,
+    Zap,
+    Boxes,
+    Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -282,117 +286,36 @@ export function CompanySuppliersClient({ initialPartners }: { initialPartners: P
                     </TableBody>
                 </Table>
 
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border border-slate-200 shadow-2xl">
-                        {selectedPartner && (
-                            <div className="flex flex-col">
-                                <div className="h-24 bg-slate-50 w-full relative border-b border-slate-100">
-                                    <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,var(--slate-200)_1px,transparent_1px)] [background-size:20px_20px]" />
-                                </div>
-                                <div className="px-8 pb-8 -mt-8 relative">
-                                    <div className="flex items-end gap-6 mb-8">
-                                        <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl bg-white ring-1 ring-slate-100">
-                                            <AvatarImage src={selectedPartner.avatarUrl || ""} />
-                                            <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-900">
-                                                {selectedPartner.name?.charAt(0)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="pb-2 space-y-1">
-                                            <div className="flex items-center gap-3">
-                                                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedPartner.name}</h2>
-                                                <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-bold uppercase">Partenaire Certifié</Badge>
-                                            </div>
-                                            <div className="flex items-center gap-4 text-[12px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-slate-400" /> {selectedPartner.location}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
-                                        <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Production</p>
-                                            <span className="text-sm font-bold text-slate-900">{selectedPartner.production || "Non spécifiée"}</span>
-                                        </div>
-                                        <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Surface</p>
-                                            <span className="text-sm font-bold text-slate-900">{selectedPartner.totalArea ? `${selectedPartner.totalArea} HA` : "Non spécifiée"}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-8">
-                                        <div className="space-y-4">
-                                            <h4 className="text-[12px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                                <Tractor className="size-4 text-emerald-600" /> Exploitation de {selectedPartner.name}
-                                            </h4>
-                                            <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 italic text-[13px] text-slate-600 leading-relaxed font-medium">
-                                                &ldquo;{selectedPartner.farmName || "Producteur Agricole stratégique"}. Spécialiste en production de haute qualité.&rdquo;
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact Direct</p>
-                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-                                                    <Phone className="size-4 text-emerald-500" />
-                                                    <p className="text-[12px] font-bold text-slate-700">{selectedPartner.phone || "N/A"}</p>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 text-right">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Partenaire depuis</p>
-                                                <div className="flex items-center justify-end gap-2 p-3 rounded-xl bg-slate-50/50 border border-slate-100">
-                                                    <Calendar className="size-4 text-slate-400" />
-                                                    <p className="text-[11px] font-bold text-slate-700">{format(new Date(selectedPartner.since), "d MMM yyyy", { locale: fr })}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {selectedPartner.cropTypes && selectedPartner.cropTypes.length > 0 && (
-                                            <div className="grid grid-cols-2 gap-4 pt-2">
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expertises</p>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {selectedPartner.cropTypes.map(c => (
-                                                            <Badge key={c} variant="secondary" className="text-[9px] font-semibold bg-white border-slate-100">{c}</Badge>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                {selectedPartner.farmingMethods && selectedPartner.farmingMethods.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Méthodes</p>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {selectedPartner.farmingMethods.map(m => (
-                                                                <Badge key={m} variant="secondary" className="text-[9px] font-semibold bg-white border-slate-100">{m}</Badge>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {selectedPartner.certifications && selectedPartner.certifications.length > 0 && (
-                                            <div className="space-y-3 pt-2">
-                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Certifications</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {selectedPartner.certifications.map((cert, i) => (
-                                                        <Badge key={i} variant="outline" className="bg-emerald-50/50 text-emerald-600 border-emerald-100 text-[10px] font-bold rounded-lg px-2">
-                                                            <ShieldCheck className="size-3 mr-1.5" /> {cert}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-10 pt-6 border-t flex justify-end">
-                                        <Button onClick={() => setIsModalOpen(false)} className="h-10 px-8 font-semibold">
-                                            Fermer
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
+                <FarmerProfileModal
+                    isOpen={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                    data={selectedPartner ? {
+                        id: selectedPartner.id,
+                        name: selectedPartner.name,
+                        avatarUrl: selectedPartner.avatarUrl,
+                        location: selectedPartner.location,
+                        farmName: selectedPartner.farmName,
+                        phone: selectedPartner.phone,
+                        email: selectedPartner.email,
+                        totalArea: selectedPartner.totalArea,
+                        cropTypes: selectedPartner.cropTypes,
+                        livestock: selectedPartner.livestock,
+                        certifications: selectedPartner.certifications,
+                        farmingMethods: selectedPartner.farmingMethods,
+                        seasonality: selectedPartner.seasonality,
+                        exportCapacity: selectedPartner.exportCapacity,
+                        logistics: selectedPartner.logistics,
+                        iceNumber: selectedPartner.iceNumber,
+                        onssaCert: selectedPartner.onssaCert,
+                        irrigationType: selectedPartner.irrigationType,
+                        hasColdStorage: selectedPartner.hasColdStorage,
+                        deliveryCapacity: selectedPartner.deliveryCapacity,
+                        businessModel: selectedPartner.businessModel,
+                        longTermContractAvailable: selectedPartner.longTermContractAvailable,
+                        production: selectedPartner.production,
+                        since: selectedPartner.since,
+                    } : null}
+                />
             </div>
         </div>
     );

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Loader2, MapPin, Search, Filter, Phone, Mail, Award, CheckCircle2, MessageSquare, User, Users, X, ChevronDown, Star, LayoutGrid, List, ArrowUpRight, ShieldCheck, Camera } from "lucide-react";
+import { Loader2, MapPin, Search, Filter, Phone, Mail, Award, CheckCircle2, MessageSquare, User, Users, X, ChevronDown, Star, LayoutGrid, List, ArrowUpRight, ShieldCheck, Camera, Truck, Waves, ClipboardCheck, Info, Calendar, Briefcase, Boxes, Zap, Globe } from "lucide-react";
 import { FarmerListDTO } from "@/data-access/farmers.dal";
+import { FarmerProfileContent } from "@/components/dashboard/company/farmer-profile-content";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,9 +186,11 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-[13px] font-bold truncate">{farmer.fullName}</h4>
-                                        <Badge variant="outline" className={cn("text-[8px] font-bold uppercase tracking-tighter px-1 py-0 h-4 border-none", selectedFarmerId === farmer.id ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500")}>
-                                            PRO
-                                        </Badge>
+                                        {farmer.iceNumber && (
+                                            <Badge variant="outline" className={cn("text-[8px] font-bold uppercase tracking-tighter px-1 py-0 h-4 border-none", selectedFarmerId === farmer.id ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500")}>
+                                                PRO
+                                            </Badge>
+                                        )}
                                     </div>
                                     <p className={cn("text-[10px] font-medium truncate mt-0.5", selectedFarmerId === farmer.id ? "text-slate-500" : "text-slate-400")}>
                                         {farmer.mainCrops.join(", ") || "Cultures Diverses"}
@@ -232,13 +235,20 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                         <div className="pb-2 space-y-1">
                                             <div className="flex items-center gap-3">
                                                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedFarmer.fullName}</h2>
-                                                <div className="bg-emerald-50 text-emerald-600 p-1 rounded-full border border-emerald-100">
-                                                    <CheckCircle2 className="size-4" />
-                                                </div>
+                                                {selectedFarmer.iceNumber && selectedFarmer.onssaCert ? (
+                                                    <div className="bg-emerald-50 text-emerald-600 p-1 rounded-full border border-emerald-100 flex items-center gap-1.5 px-2 py-0.5">
+                                                        <CheckCircle2 className="size-3.5" />
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">VÉRIFIÉ PRO</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-slate-50 text-slate-400 p-1 rounded-full border border-slate-100 flex items-center gap-1.5 px-2 py-0.5">
+                                                        <Info className="size-3.5" />
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">PROFIL ESSENTIEL</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-4 text-[12px] font-bold text-slate-500 uppercase tracking-widest">
                                                 <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-slate-400" /> {selectedFarmer.city}, {selectedFarmer.region}</span>
-                                                <span className="flex items-center gap-1.5"><Award className="size-3.5 text-slate-400" /> {selectedFarmer.totalAreaHectares} Hectares</span>
                                             </div>
                                         </div>
                                     </div>
@@ -248,35 +258,52 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Note Moyenne</p>
                                             <div className="flex items-center gap-1.5">
                                                 <Star className="size-4 fill-amber-400 text-amber-400" />
-                                                <span className="text-lg font-bold text-slate-900">{averageRating?.toFixed(1) || "4.8"}</span>
+                                                <span className="text-lg font-bold text-slate-900">{averageRating ? averageRating.toFixed(1) : "—"}</span>
                                             </div>
-                                            <p className="text-[10px] font-semibold text-slate-400 mt-1">{reviewCount || "12"} avis clients</p>
+                                            <p className="text-[10px] font-semibold text-slate-400 mt-1">{reviewCount} avis clients</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Cultures Phares</p>
-                                            <div className="flex flex-wrap justify-center gap-1">
-                                                {selectedFarmer.mainCrops.slice(0, 2).map((crop, i) => (
-                                                    <Badge key={i} variant="outline" className="bg-white text-[9px] font-bold border-slate-200">{crop}</Badge>
-                                                ))}
-                                            </div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Production Annuelle</p>
+                                            <div className="text-[14px] font-bold text-slate-900">{selectedFarmer.avgAnnualProduction}</div>
+                                            <p className="text-[9px] font-medium text-slate-400 mt-1 uppercase">Volume Moyen</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Expertise</p>
-                                            <p className="text-[13px] font-bold text-slate-900 uppercase">{selectedFarmer.farmingMethods[0] || "Drip Irrigation"}</p>
-                                            <span className="text-[9px] font-bold text-blue-600 mt-1 uppercase tracking-widest">Certifié Bio</span>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Secteur</p>
+                                            <p className="text-[13px] font-bold text-slate-900 uppercase">{selectedFarmer.livestockType || selectedFarmer.mainCrops[0] || "Agricole"}</p>
+                                            <span className="text-[9px] font-bold text-emerald-600 mt-1 uppercase tracking-widest">
+                                                {selectedFarmer.onssaCert ? "Certifié" : "Vérifié"}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2">
-                                            <ShieldCheck className="size-4 text-slate-900" />
-                                            <h4 className="text-[12px] font-bold text-slate-900 uppercase tracking-widest">Profil Vérifié Agri-Mar</h4>
-                                        </div>
-                                        <p className="text-[14px] text-slate-600 leading-relaxed font-normal">
-                                            Expert en production de {selectedFarmer.mainCrops.join(", ")} avec plus de 10 ans d&apos;expérience dans la région de {selectedFarmer.region}.
-                                            Exploitation modernisée utilisant des techniques de {selectedFarmer.farmingMethods.join(" et ")}.
-                                        </p>
-                                    </div>
+                                    <FarmerProfileContent
+                                        isCompact
+                                        data={{
+                                            id: selectedFarmer.id,
+                                            name: selectedFarmer.fullName,
+                                            avatarUrl: selectedFarmer.avatarUrl,
+                                            location: `${selectedFarmer.city}, ${selectedFarmer.region}`,
+                                            farmName: selectedFarmer.farmName,
+                                            totalArea: selectedFarmer.totalAreaHectares,
+                                            cropTypes: selectedFarmer.mainCrops,
+                                            livestock: selectedFarmer.livestockType || undefined,
+                                            certifications: selectedFarmer.certifications,
+                                            farmingMethods: selectedFarmer.farmingMethods,
+                                            seasonality: selectedFarmer.seasonAvailability,
+                                            exportCapacity: selectedFarmer.exportCapacity,
+                                            logistics: selectedFarmer.logisticsCapacity,
+                                            iceNumber: selectedFarmer.iceNumber,
+                                            onssaCert: selectedFarmer.onssaCert,
+                                            irrigationType: selectedFarmer.irrigationType,
+                                            hasColdStorage: selectedFarmer.hasColdStorage,
+                                            deliveryCapacity: selectedFarmer.deliveryCapacity,
+                                            businessModel: selectedFarmer.businessModel,
+                                            longTermContractAvailable: selectedFarmer.longTermContractAvailable,
+                                            production: selectedFarmer.availableProductionVolume,
+                                            phone: selectedFarmer.phone,
+                                            email: selectedFarmer.businessEmail,
+                                        }}
+                                    />
                                 </CardContent>
                             </Card>
 

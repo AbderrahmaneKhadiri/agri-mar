@@ -9,6 +9,12 @@ export const farmerRepository = {
         });
     },
 
+    async findById(id: string) {
+        return await db.query.farmerProfiles.findFirst({
+            where: eq(farmerProfiles.id, id),
+        });
+    },
+
     async create(data: any) {
         const [result] = await db.insert(farmerProfiles).values(data).returning();
         return result;

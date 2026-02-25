@@ -224,14 +224,23 @@ export function FarmerPartnersClient({ initialPartners }: { initialPartners: Par
                                         </div>
                                     </div>
 
-                                    <div className="p-5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
                                             <ShieldCheck className="size-4 text-slate-400" />
-                                            <span className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Statut Contractuel</span>
+                                            <span className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Identité B2B</span>
                                         </div>
-                                        <p className="text-[12px] font-medium text-slate-600 leading-relaxed italic">
-                                            &quot;Ce partenaire bénéficie d&apos;un accès préférentiel au catalogue Agri-Mar. Les commandes sont validées selon le protocole de confiance mutuelle.&quot;
-                                        </p>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Numéro ICE</span>
+                                            <span className="font-black text-slate-900 tabular-nums">{selectedPartner.iceNumber || "Non renseigné"}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Registre Commerce</span>
+                                            <span className="font-black text-slate-900 tabular-nums">{selectedPartner.rcNumber || "En attente"}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Type d'Entité</span>
+                                            <span className="font-black text-emerald-600">{selectedPartner.companyType || selectedPartner.industry || "Professionnel"}</span>
+                                        </div>
                                     </div>
 
                                     <div className="pt-2 flex items-center justify-between">

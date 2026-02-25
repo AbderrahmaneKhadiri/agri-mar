@@ -52,14 +52,16 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
     // Calcul de complétion du profil
     const calculateCompletion = () => {
         let score = 0;
-        if (profile.fullName) score += 15;
-        if (profile.phone) score += 15;
-        if (profile.region) score += 15;
-        if (profile.city) score += 15;
-        if (profile.farmName) score += 15;
-        if (profile.avatarUrl) score += 15;
+        if (profile.fullName) score += 5;
+        if (profile.phone) score += 5;
+        if (profile.region) score += 5;
+        if (profile.city) score += 5;
+        if (profile.farmName) score += 5;
+        if (profile.avatarUrl) score += 5;
         if (photos && photos.length > 0) score += 10;
-        return score;
+        if (profile.iceNumber) score += 30;
+        if (profile.onssaCert) score += 30;
+        return Math.min(score, 100);
     };
 
     const completion = calculateCompletion();
@@ -71,7 +73,25 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
             city: formData.get("city") as string,
             region: formData.get("region") as string,
             phone: formData.get("phone") as string,
+            businessEmail: formData.get("businessEmail") as string,
             farmName: formData.get("farmName") as string,
+            iceNumber: formData.get("iceNumber") as string,
+            onssaCert: formData.get("onssaCert") as string,
+            totalAreaHectares: formData.get("totalAreaHectares") as string,
+            cropTypes: (formData.get("cropTypes") as string || "").split(",").map(s => s.trim()).filter(Boolean),
+            livestockType: formData.get("livestockType") as string,
+            avgAnnualProduction: formData.get("avgAnnualProduction") as string,
+            certifications: (formData.get("certifications") as string || "").split(",").map(s => s.trim()).filter(Boolean),
+            farmingMethods: (formData.get("farmingMethods") as string || "").split(",").map(s => s.trim()).filter(Boolean),
+            availableProductionVolume: formData.get("availableProductionVolume") as string,
+            seasonAvailability: (formData.get("seasonAvailability") as string || "").split(",").map(s => s.trim()).filter(Boolean),
+            exportCapacity: formData.get("exportCapacity") === "on",
+            logisticsCapacity: formData.get("logisticsCapacity") === "on",
+            longTermContractAvailable: formData.get("longTermContractAvailable") === "on",
+            irrigationType: formData.get("irrigationType") as string,
+            businessModel: (formData.get("businessModel") as string || "").split(",").map(s => s.trim()).filter(Boolean),
+            hasColdStorage: formData.get("hasColdStorage") === "on",
+            deliveryCapacity: formData.get("deliveryCapacity") === "on",
         };
 
         const res = await updateFarmerProfileAction(data);
@@ -135,65 +155,251 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                         </CardHeader>
                         <CardContent className="p-8">
                             <form action={onSubmit} className="space-y-8">
-                                <div className="grid grid-cols-2 gap-6">
+                                {/* SECTION 1: Informations Personnelles & Base */}
+                                <div className="space-y-6">
+                                    <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Informations Personnelles</h4>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom Complet</Label>
+                                            <Input
+                                                name="fullName"
+                                                defaultValue={profile.fullName}
+                                                placeholder="Ex: Ahmed El Mansouri"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Téléphone</Label>
+                                            <Input
+                                                name="phone"
+                                                defaultValue={profile.phone}
+                                                placeholder="+212 6... "
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Professionnel</Label>
+                                            <Input
+                                                type="email"
+                                                name="businessEmail"
+                                                defaultValue={profile.businessEmail}
+                                                placeholder="contact@ferme.ma"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Région</Label>
+                                            <Select name="region" defaultValue={profile.region}>
+                                                <SelectTrigger className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold shadow-none">
+                                                    <SelectValue placeholder="Sélectionner une région" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-slate-200 shadow-2xl">
+                                                    {MAROC_REGIONS.map(r => <SelectItem key={r} value={r} className="text-[13px] font-medium h-10">{r}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Ville</Label>
+                                            <Input
+                                                name="city"
+                                                defaultValue={profile.city}
+                                                placeholder="Agadir, Meknès..."
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SECTION 2: L'Exploitation Agricole */}
+                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                    <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Détails de l'Exploitation</h4>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom de l&apos;Exploitation</Label>
+                                            <Input
+                                                name="farmName"
+                                                defaultValue={profile.farmName || ""}
+                                                placeholder="Ex: Ferme Verte"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Surface Totale (Hectares)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.1"
+                                                name="totalAreaHectares"
+                                                defaultValue={profile.totalAreaHectares?.toString() || ""}
+                                                placeholder="10"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom Complet</Label>
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Types de cultures (séparés par des virgules)</Label>
                                         <Input
-                                            name="fullName"
-                                            defaultValue={profile.fullName}
-                                            placeholder="Ex: Ahmed El Mansouri"
+                                            name="cropTypes"
+                                            defaultValue={Array.isArray(profile.cropTypes) ? profile.cropTypes.join(", ") : ""}
+                                            placeholder="Ex: Tomates, Pommes de terre, Agrumes"
                                             className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type d&apos;Élevage (Optionnel)</Label>
+                                            <Input
+                                                name="livestockType"
+                                                defaultValue={profile.livestockType || ""}
+                                                placeholder="Bovins, Ovins..."
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Production Annuelle Moyenne</Label>
+                                            <Input
+                                                name="avgAnnualProduction"
+                                                defaultValue={profile.avgAnnualProduction || ""}
+                                                placeholder="Ex: 50 Tonnes"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Méthodes de culture</Label>
+                                            <Input
+                                                name="farmingMethods"
+                                                defaultValue={Array.isArray(profile.farmingMethods) ? profile.farmingMethods.join(", ") : ""}
+                                                placeholder="Bio, Conventionnelle, Serre..."
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type d&apos;irrigation</Label>
+                                            <Select name="irrigationType" defaultValue={profile.irrigationType || ""}>
+                                                <SelectTrigger className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold shadow-none">
+                                                    <SelectValue placeholder="Séléctionnez" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-slate-200 shadow-2xl">
+                                                    <SelectItem value="Goutte-à-Goutte" className="text-[13px] font-medium h-10">Goutte-à-Goutte</SelectItem>
+                                                    <SelectItem value="Bour" className="text-[13px] font-medium h-10">Bour (Pluviale)</SelectItem>
+                                                    <SelectItem value="Mixte" className="text-[13px] font-medium h-10">Mixte</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SECTION 3: Capacités Logistiques et Commerciales */}
+                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                    <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Capacités & Ventes</h4>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Volume disponible à la vente</Label>
+                                            <Input
+                                                name="availableProductionVolume"
+                                                defaultValue={profile.availableProductionVolume || ""}
+                                                placeholder="Ex: 20 Tonnes"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilité Saisonnière</Label>
+                                            <Input
+                                                name="seasonAvailability"
+                                                defaultValue={Array.isArray(profile.seasonAvailability) ? profile.seasonAvailability.join(", ") : ""}
+                                                placeholder="Ex: Été, Automne ou Mois"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Téléphone</Label>
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Modèle d&apos;affaires souhaité (virgules)</Label>
                                         <Input
-                                            name="phone"
-                                            defaultValue={profile.phone}
-                                            placeholder="+212 6... "
+                                            name="businessModel"
+                                            defaultValue={Array.isArray(profile.businessModel) ? profile.businessModel.join(", ") : ""}
+                                            placeholder="Ex: Direct Sales, Contracts"
+                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6 pt-2">
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                            <input type="checkbox" id="hasColdStorage" name="hasColdStorage" defaultChecked={profile.hasColdStorage} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <label htmlFor="hasColdStorage" className="text-[12px] font-bold text-slate-900 cursor-pointer">Stockage Froid / Silo</label>
+                                        </div>
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                            <input type="checkbox" id="deliveryCapacity" name="deliveryCapacity" defaultChecked={profile.deliveryCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <label htmlFor="deliveryCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité de Livraison</label>
+                                        </div>
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                            <input type="checkbox" id="exportCapacity" name="exportCapacity" defaultChecked={profile.exportCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <label htmlFor="exportCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité d&apos;Exportation</label>
+                                        </div>
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                            <input type="checkbox" id="logisticsCapacity" name="logisticsCapacity" defaultChecked={profile.logisticsCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <label htmlFor="logisticsCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité Logistique propre</label>
+                                        </div>
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 md:col-span-2">
+                                            <input type="checkbox" id="longTermContractAvailable" name="longTermContractAvailable" defaultChecked={profile.longTermContractAvailable} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                            <label htmlFor="longTermContractAvailable" className="text-[12px] font-bold text-slate-900 cursor-pointer">Ouvert aux contrats à long terme</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SECTION 4: Certifications & Qualifications B2B */}
+                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                    <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Qualifications & Certifications</h4>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Numéro ICE / RC</Label>
+                                            <Input
+                                                name="iceNumber"
+                                                defaultValue={profile.iceNumber || ""}
+                                                placeholder="Ex: 00000000000000"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Agrément ONSSA</Label>
+                                            <Input
+                                                name="onssaCert"
+                                                defaultValue={profile.onssaCert || ""}
+                                                placeholder="Numéro d'agrément"
+                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Autres Certifications (virgules)</Label>
+                                        <Input
+                                            name="certifications"
+                                            defaultValue={Array.isArray(profile.certifications) ? profile.certifications.join(", ") : ""}
+                                            placeholder="Ex: Global GAP, Bio Maroc..."
                                             className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Région</Label>
-                                        <Select name="region" defaultValue={profile.region}>
-                                            <SelectTrigger className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold shadow-none">
-                                                <SelectValue placeholder="Sélectionner une région" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-slate-200 shadow-2xl">
-                                                {MAROC_REGIONS.map(r => <SelectItem key={r} value={r} className="text-[13px] font-medium h-10">{r}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Ville</Label>
-                                        <Input
-                                            name="city"
-                                            defaultValue={profile.city}
-                                            placeholder="Agadir, Meknès..."
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom de l&apos;Exploitation</Label>
-                                    <Input
-                                        name="farmName"
-                                        defaultValue={profile.farmName || ""}
-                                        placeholder="Ex: Ferme Verte"
-                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
-                                    />
-                                </div>
-
-                                <div className="pt-4 flex justify-end">
+                                <div className="pt-8 flex justify-end">
                                     <Button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="h-11 px-8"
+                                        className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800"
                                     >
                                         {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Enregistrer les modifications"}
                                     </Button>
@@ -299,6 +505,24 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                 <div className="flex flex-col">
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Ferme</span>
                                     <span className="text-[12px] font-bold text-slate-900">{profile.farmName || "Non spécifié"}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                    <Loader2 className="size-3.5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Capacité annuelle</span>
+                                    <span className="text-[12px] font-bold text-slate-900">{profile.avgAnnualProduction || "Non spécifié"}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                    <Settings className="size-3.5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Modèle / Surface</span>
+                                    <span className="text-[12px] font-bold text-slate-900">{profile.totalAreaHectares ? `${profile.totalAreaHectares} Ha` : "Non spécifié"}</span>
                                 </div>
                             </div>
                         </div>

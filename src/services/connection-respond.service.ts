@@ -1,5 +1,5 @@
 import { db } from "@/persistence/db";
-import { companyProfiles, connections, farmerProfiles, notifications } from "@/persistence/schema";
+import { companyProfiles, connections, farmerProfiles, notifications, messages } from "@/persistence/schema";
 import { defineAbilityFor } from "@/lib/casl";
 import { ConnectionResponseInput, connectionResponseSchema } from "@/lib/validations/connection.schema";
 import { and, eq } from "drizzle-orm";
@@ -84,6 +84,31 @@ export async function respondToConnectionRequest(
             })
             .where(eq(connections.id, connectionId))
             .returning();
+
+        // 5.5: Si accepté, migrer le message initial vers la table des messages
+        if (response === "ACCEPTED" && connectionRecord.initialMessage) {
+            try {
+                // L'initiateur est celui qui a envoyé le message initial
+                let initiatorUserId: string | null = null;
+                if (connectionRecord.initiatedBy === "FARMER") {
+                    const p = await db.query.farmerProfiles.findFirst({ where: eq(farmerProfiles.id, connectionRecord.farmerId) });
+                    initiatorUserId = p?.userId || null;
+                } else {
+                    const p = await db.query.companyProfiles.findFirst({ where: eq(companyProfiles.id, connectionRecord.companyId) });
+                    initiatorUserId = p?.userId || null;
+                }
+
+                if (initiatorUserId) {
+                    await db.insert(messages).values({
+                        connectionId: updatedConnection.id,
+                        senderUserId: initiatorUserId,
+                        content: connectionRecord.initialMessage,
+                    });
+                }
+            } catch (migrateError) {
+                console.error("Non-blocking message migration error:", migrateError);
+            }
+        }
 
         // 6. Notification pour l'initiateur
         if (response === "ACCEPTED") {

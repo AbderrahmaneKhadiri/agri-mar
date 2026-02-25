@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { IncomingRequestDTO } from "@/data-access/connections.dal";
+import { FarmerProfileModal } from "@/components/dashboard/company/farmer-profile-modal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,7 +27,7 @@ import {
     Filter
 } from "lucide-react";
 import { resignConnectionAction } from "@/actions/networking.actions";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -284,113 +285,36 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                     </TableBody>
                 </Table>
 
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border border-slate-200 shadow-2xl">
-                        {selectedRequest && (
-                            <div className="flex flex-col">
-                                <div className="h-24 bg-slate-50 w-full relative border-b border-slate-100">
-                                    <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,var(--slate-200)_1px,transparent_1px)] [background-size:20px_20px]" />
-                                </div>
-                                <div className="px-8 pb-8 -mt-8 relative">
-                                    <div className="flex items-end gap-6 mb-8">
-                                        <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl bg-white ring-1 ring-slate-100">
-                                            <AvatarImage src={selectedRequest.senderLogo || ""} />
-                                            <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-900">
-                                                {selectedRequest.senderName?.charAt(0)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="pb-2 space-y-1">
-                                            <div className="flex items-center gap-3">
-                                                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedRequest.senderName}</h2>
-                                                <Badge className="bg-amber-50 text-amber-600 border-amber-100 text-[9px] font-bold uppercase">Demande envoyée</Badge>
-                                            </div>
-                                            <div className="flex items-center gap-4 text-[12px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-slate-400" /> {selectedRequest.location}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
-                                        <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Production</p>
-                                            <span className="text-sm font-bold text-slate-900">{selectedRequest.production || "Non spécifié"}</span>
-                                        </div>
-                                        <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Surface</p>
-                                            <span className="text-sm font-bold text-slate-900">{selectedRequest.totalArea ? `${selectedRequest.totalArea} HA` : "Non spécifié"}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-8">
-                                        {/* Contact & Basics */}
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</p>
-                                                <p className="text-[13px] font-semibold text-slate-700">{selectedRequest.phone || "Non renseigné"}</p>
-                                            </div>
-                                            <div className="space-y-1 text-right">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</p>
-                                                <p className="text-[13px] font-semibold text-slate-700 truncate">{selectedRequest.email || "Non renseigné"}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="text-[12px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                                <Sprout className="size-4 text-emerald-600" /> Détails de l&apos;exploitation
-                                            </h4>
-                                            <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100 italic text-[13px] text-slate-600 leading-relaxed font-medium">
-                                                &ldquo;{selectedRequest.farmName || "Exploitant agricole certifié"}. Spécialiste en {selectedRequest.cropTypes?.join(", ") || "cultures maraîchères"}.&rdquo;
-                                            </div>
-                                        </div>
-
-                                        {/* Additional Info */}
-                                        <div className="grid grid-cols-2 gap-4 pt-2">
-                                            {selectedRequest.farmingMethods && selectedRequest.farmingMethods.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Méthodes</p>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {selectedRequest.farmingMethods.map(m => (
-                                                            <Badge key={m} variant="secondary" className="text-[9px] font-semibold bg-white border-slate-100">{m}</Badge>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {selectedRequest.seasonality && selectedRequest.seasonality.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disponibilité</p>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {selectedRequest.seasonality.map(s => (
-                                                            <Badge key={s} variant="secondary" className="text-[9px] font-semibold bg-white border-slate-100">{s}</Badge>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {selectedRequest.certifications && selectedRequest.certifications.length > 0 && (
-                                            <div className="space-y-3 pt-2">
-                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Certifications</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {selectedRequest.certifications.map((cert, i) => (
-                                                        <Badge key={i} variant="outline" className="bg-emerald-50/50 text-emerald-600 border-emerald-100 text-[10px] font-bold rounded-lg px-2">
-                                                            <ShieldCheck className="size-3 mr-1.5" /> {cert}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-10 pt-6 border-t flex justify-end">
-                                        <Button onClick={() => setIsModalOpen(false)} className="h-10 px-8 font-semibold">
-                                            Fermer
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
+                <FarmerProfileModal
+                    isOpen={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                    data={selectedRequest ? {
+                        id: selectedRequest.id,
+                        name: selectedRequest.senderName,
+                        avatarUrl: selectedRequest.senderLogo,
+                        location: selectedRequest.location,
+                        farmName: selectedRequest.farmName,
+                        phone: selectedRequest.phone,
+                        email: selectedRequest.email,
+                        totalArea: selectedRequest.totalArea,
+                        cropTypes: selectedRequest.cropTypes,
+                        livestock: selectedRequest.livestock,
+                        certifications: selectedRequest.certifications,
+                        farmingMethods: selectedRequest.farmingMethods,
+                        seasonality: selectedRequest.seasonality,
+                        exportCapacity: selectedRequest.exportCapacity,
+                        logistics: selectedRequest.logistics,
+                        iceNumber: selectedRequest.iceNumber,
+                        onssaCert: selectedRequest.onssaCert,
+                        irrigationType: selectedRequest.irrigationType,
+                        hasColdStorage: selectedRequest.hasColdStorage,
+                        deliveryCapacity: selectedRequest.deliveryCapacity,
+                        businessModel: selectedRequest.businessModel,
+                        longTermContractAvailable: selectedRequest.longTermContractAvailable,
+                        production: selectedRequest.production,
+                        sentAt: selectedRequest.sentAt,
+                    } : null}
+                />
             </div>
         </div>
     );

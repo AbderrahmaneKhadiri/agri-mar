@@ -9,6 +9,7 @@ export const companyProfileSchema = z.object({
     country: z.string().default("Maroc"),
     phone: z.string().min(8, "Numéro de téléphone invalide"),
     businessEmail: z.string().email("Email invalide"),
+    address: z.string().min(5, "L'adresse est requise").optional().or(z.literal("")),
     website: z.string().url("URL de site web invalide").optional().or(z.literal("")),
 
     desiredProducts: z.array(z.string()).default([]),
@@ -20,6 +21,11 @@ export const companyProfileSchema = z.object({
     exportCountries: z.array(z.string()).default([]),
     requiredCertifications: z.array(z.string()).default([]),
     purchasingCapacity: z.string().default("Non spécifiée"),
+
+    // Qualification B2B
+    iceNumber: z.string().optional().or(z.literal("")),
+    rcNumber: z.string().optional().or(z.literal("")),
+    companyType: z.string().default("Distribution"), // Hotel, Usine, Export, etc.
 });
 
 export type CompanyProfileInput = z.infer<typeof companyProfileSchema>;

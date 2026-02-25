@@ -11,6 +11,7 @@ export const marketTypeEnum = pgEnum("market_type", ["LOCAL", "INTERNATIONAL", "
 export const notificationTypeEnum = pgEnum("notification_type", ["CONNECTION_REQUEST", "NEW_MESSAGE", "CONNECTION_ACCEPTED", "NEW_QUOTE", "QUOTE_ACCEPTED"]);
 export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "SOLD_OUT", "DRAFT"]);
 export const productUnitEnum = pgEnum("product_unit", ["KG", "TONNE", "LITRE", "UNITE", "BOITE", "PALETTE"]);
+export const messageTypeEnum = pgEnum("message_type", ["TEXT", "PRODUCT_INQUIRY"]);
 
 // --- USERS (Managed by Better-Auth) ---
 export const user = pgTable("user", {
@@ -89,6 +90,14 @@ export const farmerProfiles = pgTable("farmer_profiles", {
     logisticsCapacity: boolean("logistics_capacity").default(false).notNull(),
     longTermContractAvailable: boolean("long_term_contract_available").default(false).notNull(),
 
+    // Qualification B2B Professionnelle
+    iceNumber: text("ice_number"),
+    onssaCert: text("onssa_cert"),
+    irrigationType: text("irrigation_type"), // Goutte-à-Goutte / Bour
+    hasColdStorage: boolean("has_cold_storage").default(false).notNull(),
+    deliveryCapacity: boolean("delivery_capacity").default(false).notNull(),
+    businessModel: jsonb("business_model").$type<string[]>(), // Direct Sales, Contracts
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -107,7 +116,13 @@ export const companyProfiles = pgTable("company_profiles", {
     country: text("country").notNull(),
     phone: text("phone").notNull(),
     businessEmail: text("business_email").notNull(),
+    address: text("address"),
     website: text("website"),
+
+    // Qualification B2B
+    iceNumber: text("ice_number"),
+    rcNumber: text("rc_number"),
+    companyType: text("company_type"), // Hotel, Usine, Exporter, etc.
 
     // Activité principale
     desiredProducts: jsonb("desired_products").notNull().$type<string[]>(),
@@ -132,6 +147,7 @@ export const connections = pgTable("connections", {
     companyId: uuid("company_id").references(() => companyProfiles.id, { onDelete: 'cascade' }).notNull(),
     status: connectionStatusEnum("status").default("PENDING").notNull(),
     initiatedBy: connectionInitiatorEnum("initiated_by").notNull(),
+    initialMessage: text("initial_message"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -145,6 +161,8 @@ export const messages = pgTable("messages", {
     connectionId: uuid("connection_id").references(() => connections.id, { onDelete: 'cascade' }).notNull(),
     senderUserId: text("sender_user_id").references(() => user.id, { onDelete: 'cascade' }).notNull(),
     content: text("content").notNull(),
+    type: messageTypeEnum("type").default("TEXT").notNull(),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

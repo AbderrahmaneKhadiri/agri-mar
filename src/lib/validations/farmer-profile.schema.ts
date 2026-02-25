@@ -21,6 +21,14 @@ export const farmerProfileSchema = z.object({
     exportCapacity: z.boolean().default(false),
     logisticsCapacity: z.boolean().default(false),
     longTermContractAvailable: z.boolean().default(false),
+
+    // Qualification B2B
+    iceNumber: z.string().optional().or(z.literal("")),
+    onssaCert: z.string().optional().or(z.literal("")),
+    irrigationType: z.string().optional(), // Goutte-à-Goutte / Bour
+    hasColdStorage: z.boolean().default(false),
+    deliveryCapacity: z.boolean().default(false),
+    businessModel: z.array(z.string()).default(["Direct Sales"]), // Direct Sales, Contracts
 });
 
 export type FarmerProfileInput = z.infer<typeof farmerProfileSchema>;

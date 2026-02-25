@@ -28,13 +28,14 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
     // Calcul de complétion du profil
     const calculateCompletion = () => {
         let score = 0;
-        if (profile.name) score += 15;
-        if (profile.city) score += 15;
-        if (profile.phone) score += 15;
-        if (profile.address) score += 15;
-        if (profile.website) score += 20;
-        if (profile.logoUrl) score += 20;
-        return score;
+        if (profile.companyName) score += 5;
+        if (profile.city) score += 5;
+        if (profile.phone) score += 5;
+        if (profile.address) score += 5;
+        if (profile.logoUrl) score += 10;
+        if (profile.iceNumber) score += 35;
+        if (profile.rcNumber) score += 35;
+        return Math.min(score, 100);
     };
 
     const completion = calculateCompletion();
@@ -42,10 +43,12 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
     async function onSubmit(formData: FormData) {
         setIsLoading(true);
         const data = {
-            name: formData.get("name") as string,
+            companyName: formData.get("companyName") as string,
             city: formData.get("city") as string,
             address: formData.get("address") as string,
             phone: formData.get("phone") as string,
+            iceNumber: formData.get("iceNumber") as string,
+            rcNumber: formData.get("rcNumber") as string,
             website: formData.get("website") as string,
         };
 
@@ -98,8 +101,8 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                 <div className="space-y-2">
                                     <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Raison Sociale</Label>
                                     <Input
-                                        name="name"
-                                        defaultValue={profile.name}
+                                        name="companyName"
+                                        defaultValue={profile.companyName}
                                         placeholder="Ex: AgriCorp S.A."
                                         className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                     />
@@ -136,8 +139,29 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                     />
                                 </div>
 
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">N° ICE (Identifiant Commun)</Label>
+                                        <Input
+                                            name="iceNumber"
+                                            defaultValue={profile.iceNumber}
+                                            placeholder="15 chiffres"
+                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">N° Registre de Commerce (RC)</Label>
+                                        <Input
+                                            name="rcNumber"
+                                            defaultValue={profile.rcNumber}
+                                            placeholder="Ex: 123456"
+                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
-                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Site Web</Label>
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Site Web (Optionnel)</Label>
                                     <Input
                                         name="website"
                                         defaultValue={profile.website || ""}
@@ -164,9 +188,9 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                     <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
                         <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl ring-1 ring-slate-100 mb-6">
                             <AvatarImage src={profile.logoUrl || ""} className="object-cover" />
-                            <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.name?.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.companyName?.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.name}</h3>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.companyName}</h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Espace Entreprise</p>
 
                         <div className="w-full mt-8 pt-6 border-t border-slate-100 space-y-4 text-left">

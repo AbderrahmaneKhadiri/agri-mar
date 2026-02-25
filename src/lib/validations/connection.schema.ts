@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const connectionRequestSchema = z.object({
     targetId: z.string().uuid("L'ID cible doit être un UUID valide"),
+    initialMessage: z.string().optional(),
 });
 
 export type ConnectionRequestInput = z.infer<typeof connectionRequestSchema>;

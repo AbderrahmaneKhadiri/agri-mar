@@ -26,7 +26,7 @@ export async function createConnectionRequest(
             return { success: false, error: "Données invalides", details: validatedData.error.flatten() };
         }
 
-        const { targetId } = validatedData.data;
+        const { targetId, initialMessage } = validatedData.data;
 
         // 4. Business Logic Complexes
         let initiatorProfileId: string | null = null;
@@ -89,6 +89,7 @@ export async function createConnectionRequest(
             companyId: companyIdFromRelation,
             status: "PENDING",
             initiatedBy: initiatorRole,
+            initialMessage: initialMessage || null,
         }).returning();
 
         // 6. Notification pour le destinataire

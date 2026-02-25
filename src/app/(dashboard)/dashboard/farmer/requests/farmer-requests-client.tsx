@@ -5,7 +5,7 @@ import { IncomingRequestDTO } from "@/data-access/connections.dal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, X, Building2, Calendar, ChevronDown, MoreHorizontal, Eye, Clock, ShieldCheck, Loader2, Search } from "lucide-react";
+import { Check, X, Building2, Calendar, ChevronDown, MoreHorizontal, Eye, Clock, ShieldCheck, Loader2, Search, MessageSquare } from "lucide-react";
 import { respondConnectionAction } from "@/actions/networking.actions";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -263,12 +263,16 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                 <DialogContent className="max-w-[480px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
                     {selectedRequest && (
                         <>
-                            <div className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl">
+                            <DialogHeader className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl space-y-0">
                                 <div className="relative z-10">
-                                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">Mise en Relation</h3>
-                                    <h2 className="text-xl font-bold tracking-tight leading-none text-white">Profil Acheteur</h2>
+                                    <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">
+                                        Mise en Relation
+                                    </DialogDescription>
+                                    <DialogTitle className="text-xl font-bold tracking-tight leading-none text-white">
+                                        Profil Acheteur
+                                    </DialogTitle>
                                 </div>
-                            </div>
+                            </DialogHeader>
 
                             <div className="px-8 pb-8 -mt-8 relative z-20">
                                 <Avatar className="h-20 w-20 border-4 border-white shadow-xl rounded-2xl mb-6">
@@ -295,14 +299,33 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                         </div>
                                     </div>
 
-                                    <div className="p-5 rounded-xl bg-blue-50/50 border border-blue-100/30">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <ShieldCheck className="size-4 text-blue-400" />
-                                            <span className="text-[11px] font-bold text-blue-900 uppercase tracking-widest">Protocol de Connexion</span>
+                                    <div className="p-5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <MessageSquare className="size-4 text-slate-400" />
+                                            <span className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Message d'accompagnement</span>
                                         </div>
-                                        <p className="text-[12px] font-medium text-slate-600 leading-relaxed italic">
-                                            &quot;Cette entreprise souhaite entamer une discussion commerciale et établir un contrat avec votre exploitation. Autorisez-la pour ouvrir la discussion.&quot;
+                                        <p className="text-[13px] font-medium text-slate-600 italic">
+                                            "{selectedRequest.initialMessage || "Aucun message d'accompagnement"}"
                                         </p>
+                                    </div>
+
+                                    <div className="p-5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <ShieldCheck className="size-4 text-slate-400" />
+                                            <span className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Identité B2B</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Numéro ICE</span>
+                                            <span className="font-black text-slate-900 tabular-nums">{selectedRequest.iceNumber || "Non renseigné"}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Registre Commerce</span>
+                                            <span className="font-black text-slate-900 tabular-nums">{selectedRequest.rcNumber || "En attente"}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="font-bold text-slate-400 uppercase">Type d'Entité</span>
+                                            <span className="font-black text-emerald-600">{selectedRequest.companyType || selectedRequest.senderIndustry || "Professionnel"}</span>
+                                        </div>
                                     </div>
 
                                     <div className="pt-2 flex items-center justify-between">

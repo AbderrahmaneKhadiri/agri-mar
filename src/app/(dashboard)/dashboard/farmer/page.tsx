@@ -5,6 +5,8 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { getIncomingRequests, getAcceptedPartners } from "@/data-access/connections.dal";
 import { getFarmerProducts } from "@/data-access/products.dal";
 import { FarmerDashboardTabs } from "./farmer-dashboard-tabs";
+import { calculateFarmerScore } from "@/lib/utils/profile-score";
+import { ConfidenceScoreCard } from "@/components/dashboard/confidence-score-card";
 import {
     Card,
     CardContent,
@@ -32,7 +34,13 @@ import {
     CheckCircle2,
     ChevronDown,
     Plus,
-    Search
+    Search,
+    Layers,
+    Building2,
+    Inbox,
+    Boxes,
+    Handshake,
+    Bell
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -75,8 +83,13 @@ export default async function FarmerDashboardPage() {
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — CENTRE DE PILOTAGE</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.farmName || "Mon Domaine"}</span>
-                    <span className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded uppercase">CERTIFIÉ</span>
+                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile?.farmName}</span>
+                    <span className={cn(
+                        "text-[8px] font-black px-2 py-0.5 rounded uppercase",
+                        calculateFarmerScore(profile) >= 80 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                    )}>
+                        {calculateFarmerScore(profile) >= 80 ? "CERTIFIÉ AGRI-MAR" : "PROFIL ESSENTIEL"}
+                    </span>
                 </div>
             </div>
 
@@ -106,101 +119,73 @@ export default async function FarmerDashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="@container/card bg-white shadow-sm border-slate-100">
                     <CardHeader>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Mes Produits</CardDescription>
+                        <div className="flex items-center justify-between mb-2">
+                            <CardDescription className="text-[13px] font-medium text-slate-500">Mes Produits</CardDescription>
+                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
+                                <Layers className="size-3.5" />
+                            </div>
+                        </div>
                         <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
                             {myProducts.length}
                         </CardTitle>
-                        <CardAction>
-                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
-                                <TrendingUp className="size-2.5" />
-                                +12.5%
-                            </Badge>
-                        </CardAction>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
-                            Trending up this month <TrendingUp className="size-3 text-slate-900" />
-                        </div>
                         <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Vues catalogue cumulées
+                            Total produits actifs au catalogue
                         </div>
                     </CardFooter>
                 </Card>
 
                 <Card className="@container/card bg-white shadow-sm border-slate-100">
                     <CardHeader>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Collaborateurs</CardDescription>
+                        <div className="flex items-center justify-between mb-2">
+                            <CardDescription className="text-[13px] font-medium text-slate-500">Collaborateurs</CardDescription>
+                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
+                                <Building2 className="size-3.5" />
+                            </div>
+                        </div>
                         <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
                             {acceptedPartners.length}
                         </CardTitle>
-                        <CardAction>
-                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
-                                <TrendingUp className="size-2.5" />
-                                -20%
-                            </Badge>
-                        </CardAction>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
-                            Down 20% this period <TrendingUp className="size-3 text-slate-900" />
-                        </div>
                         <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Acquisition needs attention
+                            Entreprises partenaires connectées
                         </div>
                     </CardFooter>
                 </Card>
 
                 <Card className="@container/card bg-white shadow-sm border-slate-100">
                     <CardHeader>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Demandes</CardDescription>
+                        <div className="flex items-center justify-between mb-2">
+                            <CardDescription className="text-[13px] font-medium text-slate-500">Demandes</CardDescription>
+                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
+                                <Inbox className="size-3.5" />
+                            </div>
+                        </div>
                         <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
                             {incomingRequests.filter(r => r.status === "PENDING").length}
                         </CardTitle>
-                        <CardAction>
-                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
-                                <Clock className="size-2.5" />
-                                En cours
-                            </Badge>
-                        </CardAction>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
-                            Demandes de catalogue <TrendingUp className="size-3 text-slate-400" />
-                        </div>
                         <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            À valider prochainement
+                            Demandes de contact à traiter
                         </div>
                     </CardFooter>
                 </Card>
 
-                <Card className="@container/card bg-white shadow-sm border-slate-100">
-                    <CardHeader>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Score Réseau</CardDescription>
-                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
-                            84%
-                        </CardTitle>
-                        <CardAction>
-                            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-900 gap-1 font-bold rounded-md px-1.5 py-0 text-[10px]">
-                                <TrendingUp className="size-2.5" />
-                                +4.5%
-                            </Badge>
-                        </CardAction>
-                    </CardHeader>
-                    <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
-                            Steady performance increase <TrendingUp className="size-3 text-slate-900" />
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Meets growth projections
-                        </div>
-                    </CardFooter>
-                </Card>
+                <ConfidenceScoreCard
+                    score={calculateFarmerScore(profile)}
+                    role="FARMER"
+                    className="md:col-span-2 lg:col-span-1 shadow-none border-slate-100 rounded-xl"
+                />
             </div>
 
             {/* Segmentation Tabs */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-0 mt-2" />
 
             <FarmerDashboardTabs
+                profile={profile}
                 initialRequests={incomingRequests}
                 initialPartners={acceptedPartners}
                 initialProducts={myProducts}
