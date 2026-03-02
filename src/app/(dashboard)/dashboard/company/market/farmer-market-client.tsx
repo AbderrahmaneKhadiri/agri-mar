@@ -311,7 +311,6 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                             deliveryCapacity: selectedFarmer.deliveryCapacity,
                                             businessModel: selectedFarmer.businessModel,
                                             longTermContractAvailable: selectedFarmer.longTermContractAvailable,
-                                            production: selectedFarmer.availableProductionVolume,
                                             phone: selectedFarmer.phone,
                                             email: selectedFarmer.businessEmail,
                                         }}
