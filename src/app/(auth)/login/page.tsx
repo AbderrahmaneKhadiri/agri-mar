@@ -31,10 +31,13 @@ export default function LoginPage() {
         setError("");
 
         try {
+            console.log("Attempting login for:", email);
             const { data, error } = await signIn.email({
                 email,
                 password,
             });
+
+            console.log("SignIn response:", { data, error });
 
             if (error) {
                 setError(error.message || "Email ou mot de passe incorrect");
@@ -43,6 +46,7 @@ export default function LoginPage() {
                 router.refresh();
             }
         } catch (err) {
+            console.error("Login catch error:", err);
             setError("Une erreur inattendue est survenue");
         } finally {
             setLoading(false);
