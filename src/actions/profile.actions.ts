@@ -36,14 +36,20 @@ export async function updateFarmerProfileAction(formData: any) {
 
         await farmerRepository.update(profile.id, parsed.data);
 
-        // Sync with User name if fullName is updated
-        if (parsed.data.fullName) {
+        // Sync with User name/image if updated
+        if (parsed.data.fullName || parsed.data.avatarUrl) {
+            const updateData: any = {};
+            if (parsed.data.fullName) updateData.name = parsed.data.fullName;
+            if (parsed.data.avatarUrl) updateData.image = parsed.data.avatarUrl;
+
             await db.update(user)
-                .set({ name: parsed.data.fullName })
+                .set(updateData)
                 .where(eq(user.id, session.user.id));
         }
 
         revalidatePath("/dashboard/settings");
+        revalidatePath("/dashboard/farmer");
+        revalidatePath("/dashboard");
         return { success: true };
     } catch (error) {
         console.error("updateFarmerProfileAction Error:", error);
@@ -74,14 +80,20 @@ export async function updateCompanyProfileAction(formData: any) {
 
         await companyRepository.update(profile.id, parsed.data);
 
-        // Sync with User name if companyName is updated
-        if (parsed.data.companyName) {
+        // Sync with User name/image if updated
+        if (parsed.data.companyName || parsed.data.logoUrl) {
+            const updateData: any = {};
+            if (parsed.data.companyName) updateData.name = parsed.data.companyName;
+            if (parsed.data.logoUrl) updateData.image = parsed.data.logoUrl;
+
             await db.update(user)
-                .set({ name: parsed.data.companyName })
+                .set(updateData)
                 .where(eq(user.id, session.user.id));
         }
 
         revalidatePath("/dashboard/settings");
+        revalidatePath("/dashboard/company");
+        revalidatePath("/dashboard");
         return { success: true };
     } catch (error) {
         console.error("updateCompanyProfileAction Error:", error);

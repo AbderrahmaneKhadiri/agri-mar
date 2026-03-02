@@ -33,7 +33,7 @@ export function TopCitiesChart({ data }: TopCitiesChartProps) {
     const hasData = data.length > 0;
 
     return (
-        <Card className="@container/card bg-white shadow-sm border-slate-100 col-span-1 md:col-span-2 lg:col-span-2">
+        <Card className="@container/card bg-white shadow-sm border-border col-span-1 md:col-span-2 lg:col-span-2">
             <CardHeader>
                 <div className="flex items-center justify-between mb-2">
                     <CardDescription className="text-[13px] font-medium text-slate-500">

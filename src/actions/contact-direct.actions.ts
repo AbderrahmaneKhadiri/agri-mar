@@ -60,6 +60,32 @@ export async function initiateProductInquiryAction({
                     .set({ status: "ACCEPTED", updatedAt: new Date() })
                     .where(eq(connections.id, connectionId));
             }
+
+            // Check if inquiry already exists
+            const existingInquiry = await db.query.messages.findFirst({
+                where: and(
+                    eq(messages.connectionId, connectionId),
+                    eq(messages.type, "PRODUCT_INQUIRY")
+                )
+            });
+
+            // If an inquiry exists, we check its metadata JSON. 
+            // Drizzle JSON querying is complex, so we just fetch recent PRODUCT_INQUIRY 
+            // messages and check them in memory to prevent spamming the exact same product.
+            const previousInquiries = await db.query.messages.findMany({
+                where: and(
+                    eq(messages.connectionId, connectionId),
+                    eq(messages.type, "PRODUCT_INQUIRY")
+                )
+            });
+
+            const alreadyInquired = previousInquiries.some(msg =>
+                msg.metadata && typeof msg.metadata === 'object' && 'productId' in msg.metadata && msg.metadata.productId === product.id
+            );
+
+            if (alreadyInquired) {
+                return { success: true, connectionId }; // Skip creating duplicates
+            }
         }
 
         // 3. Insert Product Inquiry Message

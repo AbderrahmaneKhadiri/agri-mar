@@ -21,7 +21,7 @@ export default async function RequestsPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
             {/* Minimalist Top Indicator */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+            <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE COMMANDE</span>
@@ -32,7 +32,7 @@ export default async function RequestsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-3 text-blue-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span className="text-[10px] font-bold uppercase tracking-[2px]">SUIVI DES NÉGOCIATIONS</span>

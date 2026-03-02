@@ -69,7 +69,7 @@ export async function sendMessageAction({ connectionId, content, clientId }: { c
                         type: "NEW_MESSAGE",
                         title: "Nouveau message",
                         description: `${session.user.name} vous a envoyé un message.`,
-                        link: session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages",
+                        link: (session.user.role === "FARMER" ? "/dashboard/company/messages" : "/dashboard/farmer/messages") + `?connectionId=${connectionId}`,
                     }).returning();
                     await pusherServer.trigger(`user-${recipientUserId}`, "new-notification", newNotif);
                 } catch (e) {
@@ -126,7 +126,7 @@ export async function getConversationAction(connectionId: string) {
 
         // Unifier et trier par date
         const unified = [
-            ...history.map(m => ({ ...m, type: "MESSAGE" })),
+            ...history,
             ...quoteHistory.map(q => ({ ...q, type: "QUOTE" }))
         ].sort((a: any, b: any) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()

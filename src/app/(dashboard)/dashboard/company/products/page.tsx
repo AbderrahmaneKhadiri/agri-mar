@@ -6,6 +6,7 @@ import { requestConnectionAction } from "@/actions/networking.actions";
 import { initiateProductInquiryAction } from "@/actions/contact-direct.actions";
 import { ProductSelectDTO } from "@/data-access/products.dal";
 import { FarmerProfileModal } from "@/components/dashboard/company/farmer-profile-modal";
+import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
 import { getFarmerProfileByIdAction } from "@/actions/farmers.actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
     MoreHorizontal,
     ShoppingCart
 } from "lucide-react";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -67,6 +69,10 @@ export default function MarketplaceProductsPage() {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [selectedFarmerProfile, setSelectedFarmerProfile] = useState<any>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+    // Product Detail Modal State
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
     // Local filter state for the new "complet" filter bar
     const [localSearchQuery, setLocalSearchQuery] = useState("");
@@ -126,6 +132,11 @@ export default function MarketplaceProductsPage() {
         setIsLoadingProfile(false);
     };
 
+    const handleViewProductDetail = (product: any) => {
+        setSelectedProduct(product);
+        setIsProductModalOpen(true);
+    };
+
     const uniqueRegions = Array.from(new Set(
         products.map(p => p.farmer?.region).filter(Boolean)
     )).sort();
@@ -161,7 +172,7 @@ export default function MarketplaceProductsPage() {
         <>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
                 {/* Minimalist Top Indicator */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+                <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE COMMANDE</span>
@@ -172,7 +183,7 @@ export default function MarketplaceProductsPage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
+                <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                     <div className="flex items-center gap-2 mb-3 text-blue-600">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                         <span className="text-[10px] font-bold uppercase tracking-[2px]">SOURCING STRATÉGIQUE</span>
@@ -193,7 +204,7 @@ export default function MarketplaceProductsPage() {
                 </div>
 
                 {/* Sub-header Content */}
-                <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
+                <div className="flex flex-col gap-4 border-b border-border pb-4">
                     {/* Category Tabs */}
                     <div className="flex items-center gap-6">
                         {CATEGORIES.map(cat => {
@@ -214,14 +225,14 @@ export default function MarketplaceProductsPage() {
                     </div>
 
                     {/* Main Search and Filter Bar */}
-                    <div className="bg-slate-50/50 p-2 rounded-xl border border-slate-100 flex flex-col xl:flex-row items-start xl:items-center gap-2 w-full">
+                    <div className="bg-slate-50/50 p-2 rounded-xl border border-border flex flex-col xl:flex-row items-start xl:items-center gap-2 w-full">
                         <div className="relative flex-1 w-full min-w-[200px]">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
                             <Input
                                 placeholder="Rechercher un agriculteur ou un produit..."
                                 value={localSearchQuery}
                                 onChange={(e) => setLocalSearchQuery(e.target.value)}
-                                className="w-full bg-white border border-slate-200 shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-slate-300 focus:border-emerald-500 transition-colors"
+                                className="w-full bg-white border border-border shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-border focus:border-emerald-500 transition-colors"
                             />
                         </div>
 
@@ -229,10 +240,10 @@ export default function MarketplaceProductsPage() {
 
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto">
                             <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                                <SelectTrigger className="w-full sm:w-[200px] h-10 bg-white border-slate-200 shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-slate-300">
+                                <SelectTrigger className="w-full sm:w-[200px] h-10 bg-white border-border shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-border">
                                     <SelectValue placeholder="Toutes les régions" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                                <SelectContent className="rounded-xl border-border shadow-lg">
                                     <SelectItem value="all" className="text-[13px] font-medium cursor-pointer">Toutes les régions</SelectItem>
                                     {uniqueRegions.map(region => (
                                         <SelectItem key={region as string} value={region as string} className="text-[13px] font-medium cursor-pointer">
@@ -243,10 +254,10 @@ export default function MarketplaceProductsPage() {
                             </Select>
 
                             <Select value={selectedCrop} onValueChange={setSelectedCrop}>
-                                <SelectTrigger className="w-full sm:w-[200px] h-10 bg-white border-slate-200 shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-slate-300">
+                                <SelectTrigger className="w-full sm:w-[200px] h-10 bg-white border-border shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-border">
                                     <SelectValue placeholder="Toutes les cultures" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                                <SelectContent className="rounded-xl border-border shadow-lg">
                                     <SelectItem value="all" className="text-[13px] font-medium cursor-pointer">Toutes les cultures</SelectItem>
                                     {uniqueCrops.map(crop => (
                                         <SelectItem key={crop as string} value={crop as string} className="text-[13px] font-medium cursor-pointer">
@@ -264,7 +275,7 @@ export default function MarketplaceProductsPage() {
                         <Loader2 className="h-8 w-8 text-slate-200 animate-spin" />
                     </div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="border border-slate-200 border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
+                    <div className="border border-border border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
                         <div className="text-center space-y-4">
                             <PackageOpen className="w-12 h-12 text-slate-200 mx-auto" />
                             <p className="text-[14px] font-semibold text-slate-900">Aucun produit ne correspond à vos filtres</p>
@@ -273,14 +284,19 @@ export default function MarketplaceProductsPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredProducts.map((product) => (
-                            <Card key={product.id} className="border-slate-200 shadow-sm hover:shadow-md transition-all rounded-xl overflow-hidden bg-white group">
+                            <Card
+                                key={product.id}
+                                className="border-border shadow-sm hover:shadow-md transition-all rounded-xl overflow-hidden bg-white group cursor-pointer"
+                                onClick={() => handleViewProductDetail(product)}
+                            >
                                 {/* Product Image Section */}
-                                <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
+                                <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden flex items-center justify-center border-b border-border">
                                     {product.images?.[0] ? (
-                                        <img
+                                        <Image
                                             src={product.images[0]}
                                             alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                                         />
                                     ) : (
                                         <PackageOpen className="size-12 text-slate-200" />
@@ -307,7 +323,10 @@ export default function MarketplaceProductsPage() {
                                                 "size-8 rounded-full ring-2 ring-white shadow-sm shrink-0 cursor-pointer hover:ring-blue-100 transition-all",
                                                 isLoadingProfile && "opacity-50 pointer-events-none"
                                             )}
-                                            onClick={() => handleViewProfile(product.farmer?.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleViewProfile(product.farmer?.id);
+                                            }}
                                         >
                                             <AvatarImage src={product.farmer?.avatarUrl || undefined} />
                                             <AvatarFallback className="text-[10px] font-bold bg-slate-100">
@@ -338,7 +357,10 @@ export default function MarketplaceProductsPage() {
                                             <span className="text-slate-900">{product.minOrderQuantity.toString()} {product.unit}</span>
                                         </div>
                                         <Button
-                                            onClick={() => handleContactSeller(product)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleContactSeller(product);
+                                            }}
                                             disabled={isContacting === product.id}
                                             className="w-full h-10 font-semibold"
                                         >
@@ -356,6 +378,14 @@ export default function MarketplaceProductsPage() {
                 isOpen={isProfileModalOpen}
                 onOpenChange={setIsProfileModalOpen}
                 data={selectedFarmerProfile}
+            />
+
+            <ProductDetailModal
+                isOpen={isProductModalOpen}
+                onOpenChange={setIsProductModalOpen}
+                product={selectedProduct}
+                onContactSeller={handleContactSeller}
+                isContacting={isContacting === selectedProduct?.id}
             />
         </>
     );

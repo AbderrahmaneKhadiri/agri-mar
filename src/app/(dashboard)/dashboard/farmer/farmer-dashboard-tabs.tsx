@@ -15,6 +15,8 @@ import { fr } from "date-fns/locale";
 import Link from "next/link";
 import { IncomingRequestDTO, PartnerDTO } from "@/data-access/connections.dal";
 import { ProductSelectDTO } from "@/data-access/products.dal";
+import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { calculateFarmerScore } from "@/lib/utils/profile-score";
 
 interface FarmerDashboardTabsProps {
@@ -22,13 +24,15 @@ interface FarmerDashboardTabsProps {
     initialRequests: IncomingRequestDTO[];
     initialPartners: PartnerDTO[];
     initialProducts: ProductSelectDTO[];
+    userImage?: string | null;
 }
 
 export function FarmerDashboardTabs({
     profile,
     initialRequests,
     initialPartners,
-    initialProducts
+    initialProducts,
+    userImage
 }: FarmerDashboardTabsProps) {
     const [activeTab, setActiveTab] = useState("requests");
     const [searchQuery, setSearchQuery] = useState("");
@@ -45,9 +49,18 @@ export function FarmerDashboardTabs({
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Product Detail Modal State
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+    const handleViewProductDetail = (product: any) => {
+        setSelectedProduct(product);
+        setIsProductModalOpen(true);
+    };
+
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-0 mt-2">
+            <div className="flex items-center justify-between border-b border-border pb-0 mt-2">
                 <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchQuery(""); }} className="w-auto">
                     <TabsList variant="line" className="bg-transparent gap-8 h-auto p-0 border-b-0">
                         <TabsTrigger
@@ -84,19 +97,19 @@ export function FarmerDashboardTabs({
                             placeholder="Rechercher..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 pl-8 text-[12px] bg-slate-50/50 border-slate-200 focus:bg-white transition-all shadow-none"
+                            className="h-8 pl-8 text-[12px] bg-slate-50/50 border-border focus:bg-white transition-all shadow-none"
                         />
                     </div>
                 </div>
             </div>
 
             <Tabs value={activeTab} className="mt-2">
-                <TabsContent value="requests" className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm m-0">
+                <TabsContent value="requests" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
                     <Table>
                         <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                            <TableRow className="border-border hover:bg-transparent h-10">
                                 <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
+                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
                                 </TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Entreprise</TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</TableHead>
@@ -112,7 +125,7 @@ export function FarmerDashboardTabs({
                             ) : filteredRequests.map((req) => (
                                 <TableRow key={req.id} className="border-slate-50 hover:bg-slate-50/20 h-10 group">
                                     <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-slate-200 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-slate-300 transition-colors" />
+                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
                                     </TableCell>
                                     <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
                                         {req.senderName}
@@ -144,12 +157,12 @@ export function FarmerDashboardTabs({
                     </Table>
                 </TabsContent>
 
-                <TabsContent value="partners" className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm m-0">
+                <TabsContent value="partners" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
                     <Table>
                         <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                            <TableRow className="border-border hover:bg-transparent h-10">
                                 <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
+                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
                                 </TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Partenaire</TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Secteur</TableHead>
@@ -165,7 +178,7 @@ export function FarmerDashboardTabs({
                             ) : filteredPartners.map((partner) => (
                                 <TableRow key={partner.id} className="border-slate-50 hover:bg-slate-50/20 h-10 group">
                                     <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-slate-200 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-slate-300 transition-colors" />
+                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
                                     </TableCell>
                                     <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
                                         {partner.name}
@@ -189,12 +202,12 @@ export function FarmerDashboardTabs({
                     </Table>
                 </TabsContent>
 
-                <TabsContent value="products" className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm m-0">
+                <TabsContent value="products" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
                     <Table>
                         <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                            <TableRow className="border-border hover:bg-transparent h-10">
                                 <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
+                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
                                 </TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Produit</TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Prix Moyen</TableHead>
@@ -208,9 +221,13 @@ export function FarmerDashboardTabs({
                                     <TableCell colSpan={5} className="h-24 text-center text-slate-500 text-[12px] font-medium">Aucun produit au catalogue.</TableCell>
                                 </TableRow>
                             ) : filteredProducts.map((product) => (
-                                <TableRow key={product.id} className="border-slate-50 hover:bg-slate-50/20 h-10 group">
+                                <TableRow
+                                    key={product.id}
+                                    className="border-slate-50 hover:bg-slate-50/20 h-10 group cursor-pointer"
+                                    onClick={() => handleViewProductDetail(product)}
+                                >
                                     <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-slate-200 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-slate-300 transition-colors" />
+                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
                                     </TableCell>
                                     <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
                                         {product.name}
@@ -222,7 +239,7 @@ export function FarmerDashboardTabs({
                                         {product.stockQuantity.toString()} {product.unit}
                                     </TableCell>
                                     <TableCell className="pr-4 py-2 text-right">
-                                        <Button asChild variant="ghost" size="sm" className="h-7 text-slate-400 hover:text-slate-900">
+                                        <Button asChild variant="ghost" size="sm" className="h-7 text-slate-400 hover:text-slate-900" onClick={(e) => e.stopPropagation()}>
                                             <Link href="/dashboard/farmer/products">
                                                 Modifier <ArrowUpRightIcon className="size-3 ml-1" />
                                             </Link>
@@ -238,9 +255,9 @@ export function FarmerDashboardTabs({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Farm Info */}
                         <div className="md:col-span-2 space-y-6">
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <LandPlot className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Informations Exploitation</span>
                                     </div>
@@ -269,7 +286,7 @@ export function FarmerDashboardTabs({
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Irrigation</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                                                         {Array.isArray(profile.irrigationType) ? profile.irrigationType.map((t: string) => (
-                                                            <Badge key={t} variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none font-bold text-[10px] uppercase">{t}</Badge>
+                                                            <Badge key={t} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-none font-bold text-[10px] uppercase">{t}</Badge>
                                                         )) : <span className="text-[13px] font-semibold text-slate-900">{profile.irrigationType || "Non spécifié"}</span>}
                                                     </div>
                                                 </div>
@@ -282,7 +299,7 @@ export function FarmerDashboardTabs({
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Méthodes de Culture</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                                                         {Array.isArray(profile.farmingMethods) && profile.farmingMethods.length > 0 ? profile.farmingMethods.map((m: string) => (
-                                                            <Badge key={m} variant="outline" className="border-emerald-100 text-emerald-600 font-bold text-[10px] uppercase">{m}</Badge>
+                                                            <Badge key={m} variant="secondary" className="bg-slate-100 text-slate-700 border-none font-bold text-[10px] uppercase">{m}</Badge>
                                                         )) : <span className="text-[13px] font-medium text-slate-400 italic">Non spécifié</span>}
                                                     </div>
                                                 </div>
@@ -306,9 +323,9 @@ export function FarmerDashboardTabs({
                                                 <div>
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Certifications</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                        {profile.onssaCert && <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none font-bold text-[10px] uppercase">ONSSA: {profile.onssaCert}</Badge>}
+                                                        {profile.onssaCert && <Badge className="bg-slate-900 text-white hover:bg-slate-800 border-none font-bold text-[10px] uppercase">ONSSA: {profile.onssaCert}</Badge>}
                                                         {Array.isArray(profile.certifications) && profile.certifications.length > 0 ? profile.certifications.map((c: string) => (
-                                                            <Badge key={c} variant="secondary" className="bg-slate-50 text-slate-600 hover:bg-slate-50 border-none font-bold text-[10px] uppercase">{c}</Badge>
+                                                            <Badge key={c} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none font-bold text-[10px] uppercase">{c}</Badge>
                                                         )) : !profile.onssaCert && <span className="text-[13px] font-medium text-slate-500 italic">Aucune certification</span>}
                                                     </div>
                                                 </div>
@@ -329,9 +346,9 @@ export function FarmerDashboardTabs({
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-amber-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <Boxes className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Production & Disponibilité</span>
                                     </div>
@@ -342,11 +359,11 @@ export function FarmerDashboardTabs({
                                         <div className="space-y-6">
                                             <div>
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Volume de Production</div>
-                                                <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100">
-                                                    <div className="text-[15px] font-bold text-amber-900">{profile.avgAnnualProduction}</div>
-                                                    <div className="text-[10px] font-bold text-amber-600 uppercase mt-1">Production Annuelle Moyenne</div>
+                                                <div className="p-4 rounded-xl bg-slate-50 border border-border">
+                                                    <div className="text-[15px] font-semibold text-slate-900">{profile.avgAnnualProduction}</div>
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">Production Annuelle Moyenne</div>
                                                 </div>
-                                                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-border">
                                                     <div className="text-[13px] font-bold text-slate-700">{profile.availableProductionVolume}</div>
                                                     <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">Volume Actuellement Disponible</div>
                                                 </div>
@@ -365,19 +382,19 @@ export function FarmerDashboardTabs({
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Export</span>
-                                                    <Badge variant={profile.exportCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.exportCapacity ? "bg-blue-500" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.exportCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.exportCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
                                                         {profile.exportCapacity ? "CAPABLE" : "NON"}
                                                     </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Logistique</span>
-                                                    <Badge variant={profile.logisticsCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.logisticsCapacity ? "bg-blue-500" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.logisticsCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.logisticsCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
                                                         {profile.logisticsCapacity ? "OUI" : "NON"}
                                                     </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Contrat Long Terme</span>
-                                                    <Badge variant={profile.longTermContractAvailable ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.longTermContractAvailable ? "bg-emerald-500" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.longTermContractAvailable ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.longTermContractAvailable ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
                                                         {profile.longTermContractAvailable ? "DISPONIBLE" : "NON"}
                                                     </Badge>
                                                 </div>
@@ -387,9 +404,9 @@ export function FarmerDashboardTabs({
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-blue-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <Building2 className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Modèle Économique & Logistique</span>
                                     </div>
@@ -402,14 +419,14 @@ export function FarmerDashboardTabs({
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Modes de Vente</div>
                                                 <div className="space-y-2">
                                                     {Array.isArray(profile.businessModel) && profile.businessModel.includes("Direct Sales") && (
-                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                                                            <Store className="size-4 text-emerald-600" />
+                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-border">
+                                                            <Store className="size-4 text-slate-500" />
                                                             <div className="text-[13px] font-bold text-slate-900">Vente Directe (Au Kilo)</div>
                                                         </div>
                                                     )}
                                                     {Array.isArray(profile.businessModel) && profile.businessModel.includes("Contracts") && (
-                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100">
-                                                            <LayoutGrid className="size-4 text-blue-600" />
+                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-border">
+                                                            <LayoutGrid className="size-4 text-slate-500" />
                                                             <div className="text-[13px] font-bold text-slate-900">Contrats (Industriel)</div>
                                                         </div>
                                                     )}
@@ -425,7 +442,7 @@ export function FarmerDashboardTabs({
                                                         <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
                                                             <Truck className="size-4 text-slate-400" /> Livraison
                                                         </div>
-                                                        <Badge variant={profile.deliveryCapacity ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.deliveryCapacity ? "bg-emerald-500" : "bg-slate-100 text-slate-400")}>
+                                                        <Badge variant={profile.deliveryCapacity ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.deliveryCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
                                                             {profile.deliveryCapacity ? "OUI" : "NON"}
                                                         </Badge>
                                                     </div>
@@ -433,7 +450,7 @@ export function FarmerDashboardTabs({
                                                         <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
                                                             <Droplets className="size-4 text-slate-400" /> Froid
                                                         </div>
-                                                        <Badge variant={profile.hasColdStorage ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.hasColdStorage ? "bg-emerald-500" : "bg-slate-100 text-slate-400")}>
+                                                        <Badge variant={profile.hasColdStorage ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.hasColdStorage ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
                                                             {profile.hasColdStorage ? "OUI" : "NON"}
                                                         </Badge>
                                                     </div>
@@ -447,11 +464,14 @@ export function FarmerDashboardTabs({
 
                         {/* Producer Summary */}
                         <div className="space-y-6">
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
                                 <CardContent className="p-8 text-center space-y-4">
-                                    <div className="mx-auto w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center ring-4 ring-slate-100">
-                                        <Building2 className="size-10 text-slate-300" />
-                                    </div>
+                                    <Avatar className="mx-auto w-24 h-24 ring-4 ring-slate-100 shadow-sm">
+                                        <AvatarImage src={profile.avatarUrl || userImage || undefined} className="object-cover" />
+                                        <AvatarFallback className="bg-slate-50 text-slate-300 text-2xl font-black">
+                                            {profile.fullName?.split(' ').map((n: any) => n[0]).join('').substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div className="space-y-1">
                                         <h3 className="text-xl font-bold text-slate-900">{profile.fullName}</h3>
                                         <p className="text-[12px] font-bold text-slate-500 uppercase tracking-widest">{profile.iceNumber || "Sans ICE"}</p>
@@ -463,46 +483,51 @@ export function FarmerDashboardTabs({
                                     </div>
                                     <div className="pt-6 space-y-4 text-left border-t border-slate-50">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
                                                 <Phone className="size-3.5" />
                                             </div>
                                             <div className="text-[13px] font-bold text-slate-900 tabular-nums">{profile.phone}</div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
                                                 <Mail className="size-3.5" />
                                             </div>
-                                            <div className="text-[13px] font-bold text-slate-900 transition-all truncate hover:text-emerald-600">{profile.businessEmail}</div>
+                                            <div className="text-[13px] font-bold text-slate-900 truncate">{profile.businessEmail}</div>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Card className={cn(
-                                "border-none shadow-xl shadow-emerald-100 p-8 text-white relative overflow-hidden group",
-                                calculateFarmerScore(profile) >= 80 ? "bg-emerald-900" : "bg-slate-900"
-                            )}>
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                                    <ShieldCheck className="size-24" />
+                            <div className="border border-border rounded-xl p-5 bg-white border-l-2 border-l-black">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <ShieldCheck className="size-4 text-slate-700" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                                        {calculateFarmerScore(profile) >= 80 ? "Statut Vérifié" : "Score de Confiance"}
+                                    </span>
                                 </div>
-                                <h3 className="text-lg font-bold mb-2">
-                                    {calculateFarmerScore(profile) >= 80 ? "Statut Vérifié" : "Profil Essentiel"}
-                                </h3>
-                                <p className="text-emerald-100/80 text-[13px] leading-relaxed mb-6 font-medium">
+                                <p className="text-[13px] text-slate-600 leading-relaxed mb-4">
                                     {calculateFarmerScore(profile) >= 80
-                                        ? "Votre profil est certifié Agry-Mar. Vous avez accès aux contrats institutionnels."
+                                        ? "Votre profil est certifié Agri-Mar. Vous avez accès aux contrats institutionnels."
                                         : "Complétez votre ICE et vos certifications pour accéder aux contrats industriels."}
                                 </p>
                                 {calculateFarmerScore(profile) < 80 && (
-                                    <Button className="w-full bg-white text-slate-900 hover:bg-emerald-50 font-bold rounded-xl h-12 text-[13px]">
-                                        Augmenter mon Score
+                                    <Button size="sm" className="w-full text-[13px]">
+                                        Compléter le profil
                                     </Button>
                                 )}
-                            </Card>
+                            </div>
                         </div>
                     </div>
                 </TabsContent>
             </Tabs>
+
+            <ProductDetailModal
+                isOpen={isProductModalOpen}
+                onOpenChange={setIsProductModalOpen}
+                product={selectedProduct}
+                onContactSeller={() => { }} // No action for farmer viewing own product
+                isContacting={false}
+            />
         </div>
     );
 }

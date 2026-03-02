@@ -32,7 +32,7 @@ export default function NotificationsPage() {
                 </p>
 
                 <div className="grid gap-4 w-full max-w-md">
-                    <Card className="border-slate-100 shadow-sm bg-white/50 backdrop-blur-sm">
+                    <Card className="border-border shadow-sm bg-white/50 backdrop-blur-sm">
                         <CardContent className="p-4 flex items-start gap-3 text-left">
                             <div className="bg-emerald-100/50 p-2 rounded-lg text-emerald-700">
                                 <Info className="size-4" />
@@ -48,7 +48,7 @@ export default function NotificationsPage() {
                 </div>
 
                 <div className="mt-10">
-                    <Button asChild variant="outline" className="h-10 rounded-xl px-6 font-bold text-[12px] border-slate-200">
+                    <Button asChild variant="outline" className="h-10 rounded-xl px-6 font-bold text-[12px] border-border">
                         <Link href="/dashboard">Retour au Dashboard</Link>
                     </Button>
                 </div>

@@ -34,13 +34,13 @@ const chartConfig = {
 
 export function MarketBarChart({ data, totalOffers }: MarketBarChartProps) {
     return (
-        <Card className="@container/card bg-white shadow-sm border-slate-100">
+        <Card className="@container/card bg-white shadow-sm border-border">
             <CardHeader>
                 <div className="flex items-center justify-between mb-1">
                     <CardDescription className="text-[13px] font-medium text-slate-500">
                         Marché Ouvert
                     </CardDescription>
-                    <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
+                    <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-border/60">
                         <Globe className="size-3.5" />
                     </div>
                 </div>

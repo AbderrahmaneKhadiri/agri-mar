@@ -8,14 +8,14 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter,
-    DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Package } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
     Select,
     SelectContent,
@@ -23,6 +23,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface ProductFormProps {
     isOpen: boolean;
@@ -41,7 +44,8 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
         minOrderQuantity: "1",
         stockQuantity: "",
         category: "Legumes",
-        status: "ACTIVE" as any
+        status: "ACTIVE" as any,
+        images: [] as string[],
     });
 
     useEffect(() => {
@@ -54,7 +58,8 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
                 minOrderQuantity: product.minOrderQuantity.toString(),
                 stockQuantity: product.stockQuantity.toString(),
                 category: product.category,
-                status: product.status
+                status: product.status,
+                images: product.images || [],
             });
         } else {
             setFormData({
@@ -65,7 +70,8 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
                 minOrderQuantity: "1",
                 stockQuantity: "",
                 category: "Legumes",
-                status: "ACTIVE"
+                status: "ACTIVE",
+                images: [],
             });
         }
     }, [product, isOpen]);
@@ -83,7 +89,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
             stockQuantity: formData.stockQuantity,
             category: formData.category,
             status: formData.status as any,
-            images: []
+            images: formData.images,
         };
 
         const result = product
@@ -93,59 +99,87 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
         setIsLoading(false);
 
         if (result.success) {
+            toast.success(product ? "Produit mis à jour" : "Produit ajouté au catalogue");
             onSuccess();
         } else {
-            alert(result.error);
+            toast.error(result.error || "Une erreur est survenue");
         }
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[480px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
-                <DialogHeader className="bg-slate-900 p-6 text-white flex flex-col justify-end min-h-[100px] rounded-t-2xl space-y-0">
-                    <div className="relative z-10">
-                        <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-1 leading-none">
-                            Catalogue
-                        </DialogDescription>
-                        <DialogTitle className="text-xl font-bold tracking-tight leading-none text-white">
-                            {product ? "Modifier le Produit" : "Nouveau Produit"}
-                        </DialogTitle>
-                    </div>
+            <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden border border-border shadow-xl rounded-xl bg-white">
+                {/* Header */}
+                <DialogHeader className="px-6 pt-6 pb-4">
+                    <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">
+                        Catalogue
+                    </DialogDescription>
+                    <DialogTitle className="text-[18px] font-semibold text-foreground leading-none">
+                        {product ? "Modifier le Produit" : "Nouveau Produit"}
+                    </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <Separator />
+
+                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                    {/* Nom */}
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Nom de l&apos;Offre</Label>
+                        <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                            Nom de l&apos;offre
+                        </Label>
                         <Input
                             required
                             value={formData.name}
                             onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
-                            className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
                             placeholder="Ex: Tomates Cerises Bio"
+                            className="h-9 text-[13px]"
                         />
                     </div>
 
+                    {/* Description */}
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Description Catalogue</Label>
+                        <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                            Description
+                        </Label>
                         <Textarea
                             required
                             value={formData.description}
                             onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))}
-                            className="bg-white border-slate-200 rounded-xl min-h-[90px] shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700 resize-none"
                             placeholder="Détails, qualité, mode de culture..."
+                            className="min-h-[80px] text-[13px] resize-none"
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5 flex flex-col pt-[18px]">
+                    {/* Images */}
+                    <div className="space-y-1.5">
+                        <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                            Photos du produit
+                        </Label>
+                        <ImageUpload
+                            value={formData.images}
+                            onChange={(urls) => setFormData(f => ({ ...f, images: urls }))}
+                            onRemove={(urlToRemove) => setFormData(f => ({
+                                ...f,
+                                images: f.images.filter(url => url !== urlToRemove)
+                            }))}
+                            maxFiles={4}
+                        />
+                    </div>
+
+                    {/* Category + Prix */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                                Catégorie
+                            </Label>
                             <Select
                                 value={formData.category}
                                 onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}
                             >
-                                <SelectTrigger className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus:ring-1 focus:ring-slate-300 text-[13px] font-medium text-slate-700">
+                                <SelectTrigger className="h-9 text-[13px]">
                                     <SelectValue placeholder="Catégorie" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-200">
+                                <SelectContent>
                                     <SelectItem value="Legumes">Légumes</SelectItem>
                                     <SelectItem value="Fruits">Fruits</SelectItem>
                                     <SelectItem value="Cereales">Céréales</SelectItem>
@@ -153,30 +187,36 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5 flex flex-col justify-end">
-                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Prix (MAD)</Label>
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                                Prix (MAD)
+                            </Label>
                             <Input
                                 type="number"
                                 step="0.01"
                                 required
                                 value={formData.price}
                                 onChange={(e) => setFormData(f => ({ ...f, price: e.target.value }))}
-                                className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
+                                placeholder="0.00"
+                                className="h-9 text-[13px]"
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Unité + Stock */}
+                    <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Unité</Label>
+                            <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                                Unité
+                            </Label>
                             <Select
                                 value={formData.unit}
                                 onValueChange={(v) => setFormData(f => ({ ...f, unit: v as any }))}
                             >
-                                <SelectTrigger className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus:ring-1 focus:ring-slate-300 text-[13px] font-medium text-slate-700">
+                                <SelectTrigger className="h-9 text-[13px]">
                                     <SelectValue placeholder="Unité" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-200">
+                                <SelectContent>
                                     <SelectItem value="KG">Kilogramme (kg)</SelectItem>
                                     <SelectItem value="TONNE">Tonne (t)</SelectItem>
                                     <SelectItem value="LITRE">Litre (L)</SelectItem>
@@ -185,34 +225,34 @@ export function ProductForm({ isOpen, onClose, onSuccess, product }: ProductForm
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Stock Disponible</Label>
+                            <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                                Stock disponible
+                            </Label>
                             <Input
                                 type="number"
                                 required
                                 value={formData.stockQuantity}
                                 onChange={(e) => setFormData(f => ({ ...f, stockQuantity: e.target.value }))}
-                                className="bg-white border-slate-200 rounded-xl h-11 shadow-sm focus-visible:ring-1 focus-visible:ring-slate-300 text-[13px] font-medium text-slate-700"
+                                placeholder="0"
+                                className="h-9 text-[13px]"
                             />
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={onClose}
-                            className="h-11 px-6 text-[13px] font-semibold text-slate-500 hover:text-slate-800 hover:bg-transparent -ml-4"
-                        >
+                    <Separator />
+
+                    {/* Footer */}
+                    <DialogFooter className="flex flex-row items-center justify-between gap-3 pt-0">
+                        <Button type="button" variant="ghost" onClick={onClose} className="text-[13px] text-muted-foreground">
                             Annuler
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="h-11 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-semibold"
-                        >
-                            {isLoading ? <Loader2 className="size-4 animate-spin" /> : (product ? 'Mettre à jour' : 'Publier au catalogue')}
+                        <Button type="submit" disabled={isLoading} className="text-[13px]">
+                            {isLoading
+                                ? <Loader2 className="size-4 animate-spin" />
+                                : product ? "Mettre à jour" : "Publier au catalogue"
+                            }
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>

@@ -21,13 +21,16 @@ export default async function DashboardLayout({
     }
 
     let profileName: string | undefined;
+    let profileAvatar: string | null | undefined;
 
     if (session.user.role === "FARMER") {
         const profile = await farmerRepository.findByUserId(session.user.id);
         profileName = profile?.fullName;
+        profileAvatar = profile?.avatarUrl;
     } else if (session.user.role === "COMPANY") {
         const profile = await companyRepository.findByUserId(session.user.id);
         profileName = profile?.companyName;
+        profileAvatar = profile?.logoUrl;
     }
 
     return (
@@ -36,7 +39,7 @@ export default async function DashboardLayout({
                 profileName={profileName}
                 role={session.user.role as "FARMER" | "COMPANY"}
                 userEmail={session.user.email}
-                userAvatar={session.user.image}
+                userAvatar={profileAvatar || session.user.image}
             />
             <SidebarInset>
                 <SiteHeader userId={session.user.id} />

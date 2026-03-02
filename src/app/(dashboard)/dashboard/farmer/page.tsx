@@ -36,7 +36,6 @@ import {
     ChevronDown,
     Plus,
     Search,
-    Layers,
     Building2,
     Inbox,
     Boxes,
@@ -78,7 +77,7 @@ export default async function FarmerDashboardPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
             {/* Minimalist Top Indicator */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+            <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — CENTRE DE PILOTAGE</span>
@@ -94,7 +93,7 @@ export default async function FarmerDashboardPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-3 text-emerald-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
@@ -116,80 +115,86 @@ export default async function FarmerDashboardPage() {
                 </div>
             </div>
 
-            {/* Metrics Grid - Exact "Documents" Block Style */}
+            {/* Metrics Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="@container/card bg-white shadow-sm border-slate-100">
-                    <CardHeader>
-                        <div className="flex items-center justify-between mb-2">
-                            <CardDescription className="text-[13px] font-medium text-slate-500">Mes Produits</CardDescription>
-                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
-                                <Layers className="size-3.5" />
+                {/* Card: Mes Produits */}
+                <Card className="bg-white shadow-sm border-border overflow-hidden relative group">
+                    <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="size-8 rounded-lg bg-slate-50 border border-border flex items-center justify-center">
+                                <Package className="size-4 text-slate-700" />
                             </div>
+                            <ArrowUpRightIcon className="size-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
                         </div>
-                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                        <div style={{ fontSize: "30px", fontWeight: 600, lineHeight: "36px", color: "lab(2.75381 0 0)" }} className="tabular-nums mb-1">
                             {myProducts.length}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Total produits actifs au catalogue
                         </div>
-                    </CardFooter>
+                        <p className="text-[12px] font-medium text-slate-400">Mes Produits</p>
+                        <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                            <span>Produits actifs au catalogue</span>
+                        </div>
+                    </CardContent>
                 </Card>
 
-                <Card className="@container/card bg-white shadow-sm border-slate-100">
-                    <CardHeader>
-                        <div className="flex items-center justify-between mb-2">
-                            <CardDescription className="text-[13px] font-medium text-slate-500">Collaborateurs</CardDescription>
-                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
-                                <Building2 className="size-3.5" />
+                {/* Card: Collaborateurs */}
+                <Card className="bg-white shadow-sm border-border overflow-hidden relative group">
+                    <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="size-8 rounded-lg bg-slate-50 border border-border flex items-center justify-center">
+                                <Handshake className="size-4 text-slate-700" />
                             </div>
+                            <ArrowUpRightIcon className="size-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
                         </div>
-                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                        <div style={{ fontSize: "30px", fontWeight: 600, lineHeight: "36px", color: "lab(2.75381 0 0)" }} className="tabular-nums mb-1">
                             {acceptedPartners.length}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Entreprises partenaires connectées
                         </div>
-                    </CardFooter>
+                        <p className="text-[12px] font-medium text-slate-400">Collaborateurs</p>
+                        <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                            <span>Entreprises partenaires connectées</span>
+                        </div>
+                    </CardContent>
                 </Card>
 
-                <Card className="@container/card bg-white shadow-sm border-slate-100">
-                    <CardHeader>
-                        <div className="flex items-center justify-between mb-2">
-                            <CardDescription className="text-[13px] font-medium text-slate-500">Demandes</CardDescription>
-                            <div className="p-1.5 rounded-lg text-slate-700 bg-slate-100 border border-slate-200/60">
-                                <Inbox className="size-3.5" />
+                {/* Card: Demandes */}
+                <Card className="bg-white shadow-sm border-border overflow-hidden relative group">
+                    <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="relative">
+                                <div className="size-8 rounded-lg bg-slate-50 border border-border flex items-center justify-center">
+                                    <Inbox className="size-4 text-slate-700" />
+                                </div>
+                                {incomingRequests.filter(r => r.status === "PENDING").length > 0 && (
+                                    <span className="absolute -top-1 -right-1 size-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse" />
+                                )}
                             </div>
+                            <ArrowUpRightIcon className="size-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
                         </div>
-                        <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">
+                        <div style={{ fontSize: "30px", fontWeight: 600, lineHeight: "36px", color: "lab(2.75381 0 0)" }} className="tabular-nums mb-1">
                             {incomingRequests.filter(r => r.status === "PENDING").length}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardFooter className="flex-col items-start gap-1 pb-4">
-                        <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            Demandes de contact à traiter
                         </div>
-                    </CardFooter>
+                        <p className="text-[12px] font-medium text-slate-400">Demandes</p>
+                        <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                            <span>Demandes en attente de traitement</span>
+                        </div>
+                    </CardContent>
                 </Card>
 
                 <ConfidenceScoreCard
                     score={calculateFarmerScore(profile)}
                     role="FARMER"
-                    className="md:col-span-2 lg:col-span-1 shadow-none border-slate-100 rounded-xl"
+                    className="md:col-span-2 lg:col-span-1 shadow-sm"
                 />
             </div>
 
             {/* Segmentation Tabs */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-0 mt-2" />
+            <div className="flex items-center justify-between border-b border-border pb-0 mt-2" />
 
             <FarmerDashboardTabs
                 profile={profile}
                 initialRequests={incomingRequests}
                 initialPartners={acceptedPartners}
                 initialProducts={myProducts}
+                userImage={session.user.image}
             />
         </main>
     );

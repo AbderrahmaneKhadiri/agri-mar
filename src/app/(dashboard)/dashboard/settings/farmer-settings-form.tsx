@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { updateFarmerProfileAction } from "@/actions/profile.actions";
-import { deleteFarmerPhotoAction } from "@/actions/social.actions";
+import { deleteFarmerPhotoAction, addFarmerPhotoAction } from "@/actions/social.actions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 const MAROC_REGIONS = [
     "Souss-Massa",
@@ -48,6 +50,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
     const [isLoading, setIsLoading] = useState(false);
     const [photos, setPhotos] = useState(initialPhotos);
     const [uploading, setUploading] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string>(profile.avatarUrl || "");
 
     // Calcul de complétion du profil
     const calculateCompletion = () => {
@@ -69,6 +72,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
     async function onSubmit(formData: FormData) {
         setIsLoading(true);
         const data = {
+            avatarUrl,
             fullName: formData.get("fullName") as string,
             city: formData.get("city") as string,
             region: formData.get("region") as string,
@@ -103,8 +107,22 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
         setIsLoading(false);
     }
 
-    const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        toast.info("L'upload de photos sera disponible prochainement.");
+    const handleUploadPhoto = async (urls: string[]) => {
+        if (urls.length === 0) return;
+        const newUrl = urls[urls.length - 1]; // Get the last uploaded URL
+
+        setUploading(true);
+        const res = await addFarmerPhotoAction(newUrl);
+        setUploading(false);
+
+        if (res.success) {
+            toast.success("Photo ajoutée à la galerie");
+            // Note: In a real app, we'd either refresh the page or the action would return the new photo object
+            // For now, revalidatePath in the action should handle it if the component re-renders
+            window.location.reload(); // Simple way to sync the gallery after a new upload
+        } else {
+            toast.error(res.error || "Erreur lors de l'ajout");
+        }
     };
 
     const handleDeletePhoto = async (id: string) => {
@@ -127,7 +145,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                     <span className="text-slate-900 font-semibold">Mon Compte Agriculteur</span>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm min-w-[280px]">
+                <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-border shadow-sm min-w-[280px]">
                     <div className="flex-1 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
                             <span className="text-slate-400">Complétion du profil</span>
@@ -141,7 +159,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
             <div className="grid grid-cols-12 gap-6 mt-2">
                 {/* Profile Form Area */}
                 <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
-                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden">
+                    <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b bg-slate-50/10">
                             <div className="flex items-center gap-3">
                                 <div className="bg-slate-900 p-2 rounded-lg text-white shadow-lg shadow-slate-900/10">
@@ -165,7 +183,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="fullName"
                                                 defaultValue={profile.fullName}
                                                 placeholder="Ex: Ahmed El Mansouri"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -174,7 +192,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="phone"
                                                 defaultValue={profile.phone}
                                                 placeholder="+212 6... "
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -187,7 +205,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="businessEmail"
                                                 defaultValue={profile.businessEmail}
                                                 placeholder="contact@ferme.ma"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -196,10 +214,10 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                         <div className="space-y-2">
                                             <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Région</Label>
                                             <Select name="region" defaultValue={profile.region}>
-                                                <SelectTrigger className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold shadow-none">
+                                                <SelectTrigger className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold shadow-none">
                                                     <SelectValue placeholder="Sélectionner une région" />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-slate-200 shadow-2xl">
+                                                <SelectContent className="rounded-xl border-border shadow-2xl">
                                                     {MAROC_REGIONS.map(r => <SelectItem key={r} value={r} className="text-[13px] font-medium h-10">{r}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
@@ -210,14 +228,14 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="city"
                                                 defaultValue={profile.city}
                                                 placeholder="Agadir, Meknès..."
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* SECTION 2: L'Exploitation Agricole */}
-                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                <div className="space-y-6 pt-4 border-t border-border">
                                     <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Détails de l'Exploitation</h4>
 
                                     <div className="grid grid-cols-2 gap-6">
@@ -227,7 +245,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="farmName"
                                                 defaultValue={profile.farmName || ""}
                                                 placeholder="Ex: Ferme Verte"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -238,7 +256,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="totalAreaHectares"
                                                 defaultValue={profile.totalAreaHectares?.toString() || ""}
                                                 placeholder="10"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -249,7 +267,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                             name="cropTypes"
                                             defaultValue={Array.isArray(profile.cropTypes) ? profile.cropTypes.join(", ") : ""}
                                             placeholder="Ex: Tomates, Pommes de terre, Agrumes"
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
 
@@ -260,7 +278,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="livestockType"
                                                 defaultValue={profile.livestockType || ""}
                                                 placeholder="Bovins, Ovins..."
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -269,7 +287,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="avgAnnualProduction"
                                                 defaultValue={profile.avgAnnualProduction || ""}
                                                 placeholder="Ex: 50 Tonnes"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -281,16 +299,16 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="farmingMethods"
                                                 defaultValue={Array.isArray(profile.farmingMethods) ? profile.farmingMethods.join(", ") : ""}
                                                 placeholder="Bio, Conventionnelle, Serre..."
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type d&apos;irrigation</Label>
                                             <Select name="irrigationType" defaultValue={profile.irrigationType || ""}>
-                                                <SelectTrigger className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold shadow-none">
+                                                <SelectTrigger className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold shadow-none">
                                                     <SelectValue placeholder="Séléctionnez" />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-slate-200 shadow-2xl">
+                                                <SelectContent className="rounded-xl border-border shadow-2xl">
                                                     <SelectItem value="Goutte-à-Goutte" className="text-[13px] font-medium h-10">Goutte-à-Goutte</SelectItem>
                                                     <SelectItem value="Bour" className="text-[13px] font-medium h-10">Bour (Pluviale)</SelectItem>
                                                     <SelectItem value="Mixte" className="text-[13px] font-medium h-10">Mixte</SelectItem>
@@ -301,7 +319,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                 </div>
 
                                 {/* SECTION 3: Capacités Logistiques et Commerciales */}
-                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                <div className="space-y-6 pt-4 border-t border-border">
                                     <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Capacités & Ventes</h4>
 
                                     <div className="grid grid-cols-2 gap-6">
@@ -311,7 +329,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="availableProductionVolume"
                                                 defaultValue={profile.availableProductionVolume || ""}
                                                 placeholder="Ex: 20 Tonnes"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -320,7 +338,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="seasonAvailability"
                                                 defaultValue={Array.isArray(profile.seasonAvailability) ? profile.seasonAvailability.join(", ") : ""}
                                                 placeholder="Ex: Été, Automne ou Mois"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -331,36 +349,36 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                             name="businessModel"
                                             defaultValue={Array.isArray(profile.businessModel) ? profile.businessModel.join(", ") : ""}
                                             placeholder="Ex: Direct Sales, Contracts"
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6 pt-2">
-                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                            <input type="checkbox" id="hasColdStorage" name="hasColdStorage" defaultChecked={profile.hasColdStorage} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
+                                            <input type="checkbox" id="hasColdStorage" name="hasColdStorage" defaultChecked={profile.hasColdStorage} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
                                             <label htmlFor="hasColdStorage" className="text-[12px] font-bold text-slate-900 cursor-pointer">Stockage Froid / Silo</label>
                                         </div>
-                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                            <input type="checkbox" id="deliveryCapacity" name="deliveryCapacity" defaultChecked={profile.deliveryCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
+                                            <input type="checkbox" id="deliveryCapacity" name="deliveryCapacity" defaultChecked={profile.deliveryCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
                                             <label htmlFor="deliveryCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité de Livraison</label>
                                         </div>
-                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                            <input type="checkbox" id="exportCapacity" name="exportCapacity" defaultChecked={profile.exportCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
+                                            <input type="checkbox" id="exportCapacity" name="exportCapacity" defaultChecked={profile.exportCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
                                             <label htmlFor="exportCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité d&apos;Exportation</label>
                                         </div>
-                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                                            <input type="checkbox" id="logisticsCapacity" name="logisticsCapacity" defaultChecked={profile.logisticsCapacity} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
+                                            <input type="checkbox" id="logisticsCapacity" name="logisticsCapacity" defaultChecked={profile.logisticsCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
                                             <label htmlFor="logisticsCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité Logistique propre</label>
                                         </div>
-                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 md:col-span-2">
-                                            <input type="checkbox" id="longTermContractAvailable" name="longTermContractAvailable" defaultChecked={profile.longTermContractAvailable} className="size-4 rounded-lg border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border md:col-span-2">
+                                            <input type="checkbox" id="longTermContractAvailable" name="longTermContractAvailable" defaultChecked={profile.longTermContractAvailable} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
                                             <label htmlFor="longTermContractAvailable" className="text-[12px] font-bold text-slate-900 cursor-pointer">Ouvert aux contrats à long terme</label>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* SECTION 4: Certifications & Qualifications B2B */}
-                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                <div className="space-y-6 pt-4 border-t border-border">
                                     <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2">Qualifications & Certifications</h4>
 
                                     <div className="grid grid-cols-2 gap-6">
@@ -370,7 +388,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="iceNumber"
                                                 defaultValue={profile.iceNumber || ""}
                                                 placeholder="Ex: 00000000000000"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -379,7 +397,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                                 name="onssaCert"
                                                 defaultValue={profile.onssaCert || ""}
                                                 placeholder="Numéro d'agrément"
-                                                className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                             />
                                         </div>
                                     </div>
@@ -390,7 +408,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                             name="certifications"
                                             defaultValue={Array.isArray(profile.certifications) ? profile.certifications.join(", ") : ""}
                                             placeholder="Ex: Global GAP, Bio Maroc..."
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                 </div>
@@ -409,7 +427,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                     </Card>
 
                     {/* Photos Area */}
-                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden">
+                    <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b bg-slate-50/10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -421,40 +439,26 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                         <CardDescription className="text-[12px] font-medium text-slate-400">Ajoutez des photos de votre exploitation pour rassurer vos partenaires.</CardDescription>
                                     </div>
                                 </div>
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        id="photo-upload"
-                                        className="hidden"
-                                        onChange={handleUploadPhoto}
-                                        accept="image/*"
-                                        disabled={uploading}
-                                    />
-                                    <Button
-                                        asChild
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9"
-                                    >
-                                        <label htmlFor="photo-upload">
-                                            {uploading ? <Loader2 className="size-3 animate-spin mr-2" /> : <Upload className="size-3 mr-2" />}
-                                            Ajouter Photo
-                                        </label>
-                                    </Button>
-                                </div>
+                                <ImageUpload
+                                    value={[]} // Always keep empty to show the "Add" button
+                                    onChange={handleUploadPhoto}
+                                    onRemove={() => { }} // Not needed here as we have separate delete buttons
+                                    maxFiles={1}
+                                    hidePreview={true}
+                                />
                             </div>
                         </CardHeader>
                         <CardContent className="p-8">
                             {photos.length === 0 ? (
-                                <div className="h-48 rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300">
+                                <div className="h-48 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-slate-300">
                                     <ImageIcon className="size-10 mb-2 opacity-20" />
                                     <p className="text-[11px] font-bold uppercase tracking-widest">Aucune photo ajoutée</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {photos.map(p => (
-                                        <div key={p.id} className="aspect-square rounded-xl bg-slate-50 relative group border border-slate-100 overflow-hidden shadow-sm">
-                                            <img src={p.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                        <div key={p.id} className="aspect-square rounded-xl bg-slate-50 relative group border border-border overflow-hidden shadow-sm">
+                                            <Image src={p.url} alt="Gallery Photo" fill className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                 <Button
                                                     size="icon"
@@ -475,22 +479,29 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
 
                 {/* Sidebar Context */}
                 <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
-                        <div className="relative mb-6">
+                    <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
+                        <div className="relative mb-6 flex flex-col items-center gap-3">
                             <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl ring-1 ring-slate-100">
-                                <AvatarImage src={profile.avatarUrl || ""} className="object-cover" />
+                                <AvatarImage src={avatarUrl || ""} className="object-cover" />
                                 <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.fullName?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="absolute -right-2 -bottom-2 bg-slate-900 p-1.5 rounded-lg border-2 border-white text-white shadow-lg">
                                 <ShieldCheck className="size-4" />
                             </div>
+                            <ImageUpload
+                                value={avatarUrl ? [avatarUrl] : []}
+                                onChange={(urls) => setAvatarUrl(urls.length > 0 ? urls[urls.length - 1] : "")}
+                                onRemove={() => setAvatarUrl("")}
+                                maxFiles={1}
+                                hidePreview={true}
+                            />
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 tracking-tight">{profile.fullName}</h3>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Exploitant Agricole</p>
 
-                        <div className="w-full mt-8 pt-6 border-t border-slate-100 space-y-4 text-left">
+                        <div className="w-full mt-8 pt-6 border-t border-border space-y-4 text-left">
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <MapPin className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -499,7 +510,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <Sprout className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -508,7 +519,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <Loader2 className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -517,7 +528,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <Settings className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">

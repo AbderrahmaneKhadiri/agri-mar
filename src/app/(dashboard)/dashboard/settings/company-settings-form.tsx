@@ -21,9 +21,11 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 export function CompanySettingsForm({ profile }: { profile: any }) {
     const [isLoading, setIsLoading] = useState(false);
+    const [logoUrl, setLogoUrl] = useState<string>(profile.logoUrl || "");
 
     // Calcul de complétion du profil
     const calculateCompletion = () => {
@@ -43,6 +45,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
     async function onSubmit(formData: FormData) {
         setIsLoading(true);
         const data = {
+            logoUrl,
             companyName: formData.get("companyName") as string,
             city: formData.get("city") as string,
             address: formData.get("address") as string,
@@ -71,7 +74,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                     <span className="text-slate-900 font-semibold">Mon Compte Entreprise</span>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm min-w-[280px]">
+                <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-border shadow-sm min-w-[280px]">
                     <div className="flex-1 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
                             <span className="text-slate-400">Complétion du profil</span>
@@ -84,7 +87,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
 
             <div className="grid grid-cols-12 gap-6 mt-2">
                 <div className="col-span-12 lg:col-span-8">
-                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden">
+                    <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b bg-slate-50/10">
                             <div className="flex items-center gap-3">
                                 <div className="bg-slate-900 p-2 rounded-lg text-white shadow-lg shadow-slate-900/10">
@@ -104,7 +107,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                         name="companyName"
                                         defaultValue={profile.companyName}
                                         placeholder="Ex: AgriCorp S.A."
-                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                     />
                                 </div>
 
@@ -115,7 +118,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                             name="city"
                                             defaultValue={profile.city}
                                             placeholder="Casablanca, Rabat..."
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -124,7 +127,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                             name="phone"
                                             defaultValue={profile.phone}
                                             placeholder="+212 5... "
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                 </div>
@@ -135,7 +138,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                         name="address"
                                         defaultValue={profile.address}
                                         placeholder="N° 45, Av. des FAR..."
-                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                     />
                                 </div>
 
@@ -146,7 +149,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                             name="iceNumber"
                                             defaultValue={profile.iceNumber}
                                             placeholder="15 chiffres"
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -155,7 +158,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                             name="rcNumber"
                                             defaultValue={profile.rcNumber}
                                             placeholder="Ex: 123456"
-                                            className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                            className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                         />
                                     </div>
                                 </div>
@@ -166,7 +169,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                         name="website"
                                         defaultValue={profile.website || ""}
                                         placeholder="https://www.agricorp.ma"
-                                        className="h-11 bg-white border-slate-200 rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                        className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
                                     />
                                 </div>
 
@@ -185,17 +188,26 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                 </div>
 
                 <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-                    <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
-                        <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl ring-1 ring-slate-100 mb-6">
-                            <AvatarImage src={profile.logoUrl || ""} className="object-cover" />
-                            <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.companyName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                    <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden text-center p-8 flex flex-col items-center">
+                        <div className="relative mb-6 flex flex-col items-center gap-3">
+                            <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl ring-1 ring-slate-100">
+                                <AvatarImage src={logoUrl || ""} className="object-cover" />
+                                <AvatarFallback className="bg-slate-50 text-slate-900 text-3xl font-black">{profile.companyName?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <ImageUpload
+                                value={logoUrl ? [logoUrl] : []}
+                                onChange={(urls) => setLogoUrl(urls.length > 0 ? urls[urls.length - 1] : "")}
+                                onRemove={() => setLogoUrl("")}
+                                maxFiles={1}
+                                hidePreview={true}
+                            />
+                        </div>
                         <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.companyName}</h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Espace Entreprise</p>
 
-                        <div className="w-full mt-8 pt-6 border-t border-slate-100 space-y-4 text-left">
+                        <div className="w-full mt-8 pt-6 border-t border-border space-y-4 text-left">
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <MapPin className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -204,7 +216,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-slate-400">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-border text-slate-400">
                                     <Globe className="size-3.5" />
                                 </div>
                                 <div className="flex flex-col">

@@ -63,7 +63,7 @@ export default function RegisterPage() {
                                                 "flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300",
                                                 role === "FARMER"
                                                     ? "border-emerald-500 bg-emerald-50/30 shadow-indigo-10 ring-1 ring-emerald-500/10"
-                                                    : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                                                    : "border-border bg-white hover:border-border hover:shadow-md"
                                             )}
                                         >
                                             <Sprout className={cn("size-6 mb-3 transition-colors", role === "FARMER" ? "text-emerald-500" : "text-slate-400")} />
@@ -78,7 +78,7 @@ export default function RegisterPage() {
                                                 "flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300",
                                                 role === "COMPANY"
                                                     ? "border-blue-600 bg-blue-50/30 shadow-indigo-10 ring-1 ring-blue-600/10"
-                                                    : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                                                    : "border-border bg-white hover:border-border hover:shadow-md"
                                             )}
                                         >
                                             <Building2 className={cn("size-6 mb-3 transition-colors", role === "COMPANY" ? "text-blue-600" : "text-slate-400")} />
@@ -98,7 +98,7 @@ export default function RegisterPage() {
                                             type="text"
                                             placeholder="Votre nom"
                                             required
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
                                         />
                                         <User className="absolute left-4 top-3.5 size-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                     </div>
@@ -114,7 +114,7 @@ export default function RegisterPage() {
                                             type="email"
                                             placeholder="vous@exemple.com"
                                             required
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
                                         />
                                         <Mail className="absolute left-4 top-3.5 size-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                     </div>
@@ -130,7 +130,7 @@ export default function RegisterPage() {
                                             type="password"
                                             placeholder="********"
                                             required
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all"
                                         />
                                         <Lock className="absolute left-4 top-3.5 size-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                     </div>
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-slate-100 flex flex-col space-y-6">
+                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-border flex flex-col space-y-6">
                             <Button
                                 type="submit"
                                 disabled={isPending}

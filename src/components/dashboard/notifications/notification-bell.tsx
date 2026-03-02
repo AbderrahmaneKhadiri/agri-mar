@@ -57,6 +57,11 @@ export function NotificationBell({ userId }: { userId?: string }) {
             setUnreadCount(prev => prev + 1);
         });
 
+        channel.bind("notifications-refresh", () => {
+            // Delay to allow DB propagation
+            setTimeout(loadNotifications, 500);
+        });
+
         return () => {
             channel.unbind_all();
             channel.unsubscribe();
@@ -106,8 +111,8 @@ export function NotificationBell({ userId }: { userId?: string }) {
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0 border border-slate-200 shadow-lg rounded-2xl overflow-hidden bg-white mt-4 ml-4" align="start">
-                <PopoverHeader className="p-4 border-b border-slate-100 bg-white">
+            <PopoverContent className="w-80 p-0 border border-border shadow-lg rounded-2xl overflow-hidden bg-white mt-4 ml-4" align="start">
+                <PopoverHeader className="p-4 border-b border-border bg-white">
                     <div className="flex items-center justify-between">
                         <PopoverTitle className="text-xs font-bold text-slate-900 tracking-tight uppercase tracking-[1.5px]">NOTIFICATIONS</PopoverTitle>
                         {unreadCount > 0 && (

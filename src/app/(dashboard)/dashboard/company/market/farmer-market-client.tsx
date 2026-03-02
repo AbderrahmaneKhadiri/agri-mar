@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { requestConnectionAction } from "@/actions/networking.actions";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 const MAROC_REGIONS = [
     "Souss-Massa",
@@ -60,10 +62,15 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
 
     useEffect(() => {
         setFarmers(initialFarmers);
-        if (initialFarmers.length > 0 && (!selectedFarmerId || !initialFarmers.find(f => f.id === selectedFarmerId))) {
+
+        // Handle direct linking to a farmer via query param
+        const farmerId = searchParams.get("farmerId");
+        if (farmerId && initialFarmers.some(f => f.id === farmerId)) {
+            setSelectedFarmerId(farmerId);
+        } else if (initialFarmers.length > 0 && (!selectedFarmerId || !initialFarmers.find(f => f.id === selectedFarmerId))) {
             setSelectedFarmerId(initialFarmers[0].id);
         }
-    }, [initialFarmers]);
+    }, [initialFarmers, searchParams]);
 
     const selectedFarmer = useMemo(() => farmers.find(f => f.id === selectedFarmerId), [farmers, selectedFarmerId]);
 
@@ -96,9 +103,9 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
         setIsRequesting(true);
         const result = await requestConnectionAction({ targetId: selectedFarmerId });
         if (result.error) {
-            alert(result.error);
+            toast.error(result.error);
         } else {
-            alert("Demande de connexion envoyée avec succès !");
+            toast.success("Demande de connexion envoyée avec succès !");
         }
         setIsRequesting(false);
     };
@@ -117,12 +124,12 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
             </div>
 
             {/* Filter Bar */}
-            <div className="flex flex-wrap items-center gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+            <div className="flex flex-wrap items-center gap-4 bg-slate-50/50 p-3 rounded-xl border border-border">
                 <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
                     <Input
                         placeholder="Rechercher un agriculteur ou une ferme..."
-                        className="pl-9 bg-white border-slate-200 h-9 rounded-lg text-[13px] focus-visible:ring-slate-200"
+                        className="pl-9 bg-white border-border h-9 rounded-lg text-[13px] focus-visible:ring-slate-200"
                         defaultValue={searchParams.get('search') || ""}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -132,7 +139,7 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                     />
                 </div>
                 <Select value={searchParams.get('region') || "all"} onValueChange={(v) => updateFilters('region', v)}>
-                    <SelectTrigger className="w-[180px] h-9 bg-white border-slate-200 text-[12px] font-semibold rounded-lg">
+                    <SelectTrigger className="w-[180px] h-9 bg-white border-border text-[12px] font-semibold rounded-lg">
                         <SelectValue placeholder="Région" />
                     </SelectTrigger>
                     <SelectContent>
@@ -141,7 +148,7 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                     </SelectContent>
                 </Select>
                 <Select value={searchParams.get('cropType') || "all"} onValueChange={(v) => updateFilters('cropType', v)}>
-                    <SelectTrigger className="w-[180px] h-9 bg-white border-slate-200 text-[12px] font-semibold rounded-lg">
+                    <SelectTrigger className="w-[180px] h-9 bg-white border-border text-[12px] font-semibold rounded-lg">
                         <SelectValue placeholder="Cultures" />
                     </SelectTrigger>
                     <SelectContent>
@@ -158,50 +165,55 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
 
             <div className="grid grid-cols-12 gap-6 mt-2">
                 {/* Farmer List (Sidebar-like) */}
-                <div className="col-span-12 lg:col-span-4 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden flex flex-col h-[700px]">
-                    <div className="p-4 border-b bg-slate-50/30">
-                        <h3 className="text-[12px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Users className="size-3.5" />
-                            Résultats ({farmers.length})
-                        </h3>
+                <div className="col-span-12 lg:col-span-4 border border-border rounded-xl bg-white shadow-sm overflow-hidden flex flex-col h-[700px]">
+                    <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Users className="size-4 text-muted-foreground" />
+                            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">
+                                Résultats <span className="text-muted-foreground font-normal">({farmers.length})</span>
+                            </h3>
+                        </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-1 p-2 scrollbar-none">
-                        {farmers.map((farmer) => (
-                            <div
-                                key={farmer.id}
-                                onClick={() => setSelectedFarmerId(farmer.id)}
-                                className={cn(
-                                    "p-3 rounded-lg cursor-pointer transition-all flex items-center gap-3",
-                                    selectedFarmerId === farmer.id
-                                        ? "bg-slate-100/60 text-slate-900 shadow-sm"
-                                        : "hover:bg-slate-50 text-slate-700 border border-transparent"
-                                )}
-                            >
-                                <Avatar className="size-10 rounded-lg border border-slate-200/50 shrink-0 shadow-sm">
-                                    <AvatarImage src={farmer.avatarUrl || ""} />
-                                    <AvatarFallback className={cn("text-xs font-bold", selectedFarmerId === farmer.id ? "bg-white/50" : "bg-slate-100")}>
-                                        {farmer.fullName.charAt(0)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="text-[13px] font-bold truncate">{farmer.fullName}</h4>
-                                        {farmer.iceNumber && (
-                                            <Badge variant="outline" className={cn("text-[8px] font-bold uppercase tracking-tighter px-1 py-0 h-4 border-none", selectedFarmerId === farmer.id ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500")}>
-                                                PRO
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <p className={cn("text-[10px] font-medium truncate mt-0.5", selectedFarmerId === farmer.id ? "text-slate-500" : "text-slate-400")}>
-                                        {farmer.mainCrops.join(", ") || "Cultures Diverses"}
-                                    </p>
-                                    <div className="flex items-center gap-1.5 mt-1.5">
-                                        <MapPin className="size-3 opacity-50" />
-                                        <span className="text-[10px] font-semibold">{farmer.city}</span>
+                    <div className="flex-1 overflow-y-auto py-2 scrollbar-none">
+                        {farmers.map((farmer) => {
+                            const isSelected = selectedFarmerId === farmer.id;
+                            return (
+                                <div
+                                    key={farmer.id}
+                                    onClick={() => setSelectedFarmerId(farmer.id)}
+                                    className={cn(
+                                        "mx-2 px-3 py-3 rounded-xl cursor-pointer transition-all flex items-start gap-3",
+                                        isSelected
+                                            ? "bg-muted"
+                                            : "hover:bg-muted/50"
+                                    )}
+                                >
+                                    <Avatar className="size-10 rounded-xl border border-border shrink-0 mt-0.5">
+                                        <AvatarImage src={farmer.avatarUrl || ""} />
+                                        <AvatarFallback className={cn("text-[11px] font-semibold rounded-xl", isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground")}>
+                                            {farmer.fullName.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-baseline justify-between mb-0.5">
+                                            <h4 className="text-[13px] font-semibold text-foreground truncate">{farmer.fullName}</h4>
+                                            {farmer.iceNumber && (
+                                                <Badge variant="secondary" className="text-[9px] font-semibold uppercase tracking-widest px-1.5 py-0 h-4 bg-background/50 text-muted-foreground ml-2 border-border/50 shadow-none">
+                                                    PRO
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground truncate mb-1.5">
+                                            {farmer.mainCrops.join(", ") || "Cultures Diverses"}
+                                        </p>
+                                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+                                            <MapPin className="size-3 shrink-0" />
+                                            <span className="truncate">{farmer.city}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -210,8 +222,8 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                     {selectedFarmer ? (
                         <>
                             {/* Profile Header Card */}
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white rounded-xl">
-                                <div className="h-32 bg-slate-50 w-full relative border-b border-slate-100">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white rounded-xl">
+                                <div className="h-32 bg-slate-50 w-full relative border-b border-border">
                                     <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,var(--slate-200)_1px,transparent_1px)] [background-size:20px_20px]" />
                                     <div className="absolute top-4 right-4 flex gap-2">
                                         <Button
@@ -226,53 +238,52 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                 </div>
                                 <CardContent className="px-8 pb-8 -mt-10 relative">
                                     <div className="flex items-end gap-6 mb-8">
-                                        <Avatar className="size-24 rounded-2xl border-4 border-white shadow-2xl bg-white ring-1 ring-slate-100">
+                                        <Avatar className="size-24 rounded-2xl border flex-shrink-0 bg-white shadow-sm ring-4 ring-white">
                                             <AvatarImage src={selectedFarmer.avatarUrl || ""} />
-                                            <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-900">
+                                            <AvatarFallback className="text-3xl font-bold bg-muted text-muted-foreground">
                                                 {selectedFarmer.fullName.charAt(0)}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <div className="pb-2 space-y-1">
+                                        <div className="pb-1 space-y-1.5 flex-1 min-w-0">
                                             <div className="flex items-center gap-3">
-                                                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedFarmer.fullName}</h2>
+                                                <h2 className="text-2xl font-semibold text-foreground tracking-tight truncate">{selectedFarmer.fullName}</h2>
                                                 {selectedFarmer.iceNumber && selectedFarmer.onssaCert ? (
-                                                    <div className="bg-emerald-50 text-emerald-600 p-1 rounded-full border border-emerald-100 flex items-center gap-1.5 px-2 py-0.5">
-                                                        <CheckCircle2 className="size-3.5" />
-                                                        <span className="text-[10px] font-black uppercase tracking-wider">VÉRIFIÉ PRO</span>
-                                                    </div>
+                                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100/50 text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-md gap-1.5 shrink-0">
+                                                        <CheckCircle2 className="size-3" />
+                                                        Vérifié Pro
+                                                    </Badge>
                                                 ) : (
-                                                    <div className="bg-slate-50 text-slate-400 p-1 rounded-full border border-slate-100 flex items-center gap-1.5 px-2 py-0.5">
-                                                        <Info className="size-3.5" />
-                                                        <span className="text-[10px] font-black uppercase tracking-wider">PROFIL ESSENTIEL</span>
-                                                    </div>
+                                                    <Badge variant="secondary" className="bg-muted text-muted-foreground border-border/50 text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-md gap-1.5 shrink-0">
+                                                        <Info className="size-3" />
+                                                        Profil Essentiel
+                                                    </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-4 text-[12px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-slate-400" /> {selectedFarmer.city}, {selectedFarmer.region}</span>
+                                            <div className="flex items-center gap-2 text-[12px] text-muted-foreground font-medium">
+                                                <span className="flex items-center gap-1.5 truncate"><MapPin className="size-3.5" /> {selectedFarmer.city}, {selectedFarmer.region}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-4 mb-8">
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Note Moyenne</p>
-                                            <div className="flex items-center gap-1.5">
-                                                <Star className="size-4 fill-amber-400 text-amber-400" />
-                                                <span className="text-lg font-bold text-slate-900">{averageRating ? averageRating.toFixed(1) : "—"}</span>
+                                        <div className="p-4 rounded-xl border border-border flex flex-col items-start bg-card shadow-sm">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5"><Star className="size-3.5" /> Note Moyenne</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-semibold text-foreground tracking-tight">{averageRating ? averageRating.toFixed(1) : "—"}</span>
                                             </div>
-                                            <p className="text-[10px] font-semibold text-slate-400 mt-1">{reviewCount} avis clients</p>
+                                            <p className="text-[11px] font-medium text-muted-foreground mt-1">{reviewCount} avis clients</p>
                                         </div>
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Production Annuelle</p>
-                                            <div className="text-[14px] font-bold text-slate-900">{selectedFarmer.avgAnnualProduction}</div>
-                                            <p className="text-[9px] font-medium text-slate-400 mt-1 uppercase">Volume Moyen</p>
+                                        <div className="p-4 rounded-xl border border-border flex flex-col items-start bg-card shadow-sm">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5"><Boxes className="size-3.5" /> Production Annuelle</p>
+                                            <span className="text-lg font-semibold text-foreground tracking-tight truncate w-full">{selectedFarmer.avgAnnualProduction || "Non spécifié"}</span>
+                                            <p className="text-[11px] font-medium text-muted-foreground mt-1">Volume Moyen</p>
                                         </div>
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Secteur</p>
-                                            <p className="text-[13px] font-bold text-slate-900 uppercase">{selectedFarmer.livestockType || selectedFarmer.mainCrops[0] || "Agricole"}</p>
-                                            <span className="text-[9px] font-bold text-emerald-600 mt-1 uppercase tracking-widest">
+                                        <div className="p-4 rounded-xl border border-border flex flex-col items-start bg-card shadow-sm">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5"><Briefcase className="size-3.5" /> Secteur</p>
+                                            <span className="text-lg font-semibold text-foreground tracking-tight uppercase truncate w-full">{selectedFarmer.livestockType || selectedFarmer.mainCrops[0] || "Agricole"}</span>
+                                            <p className="text-[11px] font-medium text-emerald-600 mt-1 uppercase tracking-widest">
                                                 {selectedFarmer.onssaCert ? "Certifié" : "Vérifié"}
-                                            </span>
+                                            </p>
                                         </div>
                                     </div>
 
@@ -295,6 +306,7 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                             iceNumber: selectedFarmer.iceNumber,
                                             onssaCert: selectedFarmer.onssaCert,
                                             irrigationType: selectedFarmer.irrigationType,
+                                            production: selectedFarmer.avgAnnualProduction,
                                             hasColdStorage: selectedFarmer.hasColdStorage,
                                             deliveryCapacity: selectedFarmer.deliveryCapacity,
                                             businessModel: selectedFarmer.businessModel,
@@ -308,63 +320,69 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                             </Card>
 
                             {/* Gallery Carousel/Grid */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <Card className="border-slate-200 shadow-sm bg-white rounded-xl">
-                                    <CardHeader className="p-5 border-b flex flex-row items-center justify-between space-y-0">
-                                        <CardTitle className="text-[13px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                            <Camera className="size-3.5" />
+                            <div className="grid grid-cols-2 gap-6">
+                                <Card className="border-border shadow-sm bg-card rounded-xl overflow-hidden flex flex-col">
+                                    <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-white">
+                                        <h3 className="text-[13px] font-semibold text-foreground tracking-tight flex items-center gap-1.5">
+                                            <Camera className="size-3.5 text-muted-foreground" />
                                             Exploitation
-                                        </CardTitle>
-                                        <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-600 px-2">Show all</Button>
-                                    </CardHeader>
-                                    <CardContent className="p-4">
+                                        </h3>
+                                        {photos.length > 0 && (
+                                            <Button variant="ghost" size="sm" className="h-6 text-[11px] font-medium text-muted-foreground hover:text-foreground px-2 -mr-2">Voir tout</Button>
+                                        )}
+                                    </div>
+                                    <CardContent className="p-5 flex-1 flex flex-col">
                                         {loadingDetails ? (
-                                            <div className="h-40 flex items-center justify-center"><Loader2 className="size-6 animate-spin text-slate-200" /></div>
+                                            <div className="flex-1 min-h-[160px] flex items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>
                                         ) : photos.length > 0 ? (
                                             <div className="grid grid-cols-2 gap-2">
                                                 {photos.slice(0, 4).map((p, i) => (
-                                                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-slate-50 border relative group">
-                                                        <img src={p.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-muted border border-border/50 relative group">
+                                                        <Image src={p.url} alt={`Photo ${i}`} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                             <ArrowUpRight className="size-4 text-white" />
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-lg text-slate-300">
-                                                <Camera className="size-8 opacity-20 mb-2" />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Pas de média</span>
+                                            <div className="flex-1 min-h-[160px] flex flex-col items-center justify-center border border-dashed border-border rounded-xl text-muted-foreground bg-muted/30">
+                                                <Camera className="size-6 opacity-20 mb-2" />
+                                                <span className="text-[10px] font-semibold uppercase tracking-widest">Pas de photos</span>
                                             </div>
                                         )}
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-slate-200 shadow-sm bg-white rounded-xl">
-                                    <CardHeader className="p-5 border-b flex flex-row items-center justify-between space-y-0">
-                                        <CardTitle className="text-[13px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                            <Star className="size-3.5" />
+                                <Card className="border-border shadow-sm bg-card rounded-xl overflow-hidden flex flex-col">
+                                    <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-white">
+                                        <h3 className="text-[13px] font-semibold text-foreground tracking-tight flex items-center gap-1.5">
+                                            <Star className="size-3.5 text-muted-foreground" />
                                             Avis Récents
-                                        </CardTitle>
-                                        <Button variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-600 px-2">Read feedback</Button>
-                                    </CardHeader>
-                                    <CardContent className="p-4 space-y-4">
+                                        </h3>
+                                        {reviews.length > 0 && (
+                                            <Button variant="ghost" size="sm" className="h-6 text-[11px] font-medium text-muted-foreground hover:text-foreground px-2 -mr-2">Lire tout</Button>
+                                        )}
+                                    </div>
+                                    <CardContent className="p-5 flex-1 flex flex-col">
                                         {loadingDetails ? (
-                                            <div className="h-40 flex items-center justify-center"><Loader2 className="size-6 animate-spin text-slate-200" /></div>
+                                            <div className="flex-1 min-h-[160px] flex items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>
                                         ) : reviews.length > 0 ? (
-                                            reviews.slice(0, 2).map((r, i) => (
-                                                <div key={i} className="space-y-1.5">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[12px] font-bold text-slate-900">{r.reviewer?.fullName || "Anonyme"}</span>
-                                                        <div className="flex text-amber-400"><Star className="size-2.5 fill-current" /></div>
+                                            <div className="space-y-4">
+                                                {reviews.slice(0, 2).map((r, i) => (
+                                                    <div key={i} className="space-y-1.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[12px] font-semibold text-foreground">{r.reviewer?.fullName || "Anonyme"}</span>
+                                                            <div className="flex text-amber-500"><Star className="size-2.5 fill-current" /></div>
+                                                        </div>
+                                                        <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2 italic">&ldquo;{r.comment}&rdquo;</p>
                                                     </div>
-                                                    <p className="text-[11px] text-slate-500 leading-normal line-clamp-2 italic">&quot;{r.comment}&quot;</p>
-                                                </div>
-                                            ))
+                                                ))}
+                                            </div>
                                         ) : (
-                                            <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-lg text-slate-300">
-                                                <MessageSquare className="size-8 opacity-20 mb-2" />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Aucun avis</span>
+                                            <div className="flex-1 min-h-[160px] flex flex-col items-center justify-center border border-dashed border-border rounded-xl text-muted-foreground bg-muted/30">
+                                                <MessageSquare className="size-6 opacity-20 mb-2" />
+                                                <span className="text-[10px] font-semibold uppercase tracking-widest">Aucun avis</span>
                                             </div>
                                         )}
                                     </CardContent>
@@ -372,7 +390,7 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-2xl bg-white/50">
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-border rounded-2xl bg-white/50">
                             <User className="size-16 opacity-10 mb-4" />
                             <p className="text-[14px] font-semibold text-slate-400">Sélectionnez un profil pour voir les détails</p>
                         </div>

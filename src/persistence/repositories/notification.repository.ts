@@ -21,6 +21,30 @@ export const notificationRepository = {
         return result.length;
     },
 
+    async countUnreadByCategory(userId: string) {
+        const result = await db.query.notifications.findMany({
+            where: and(
+                eq(notifications.userId, userId),
+                eq(notifications.isRead, false)
+            )
+        });
+
+        const counts = {
+            messages: 0,
+            requests: 0,
+        };
+
+        result.forEach(notif => {
+            if (notif.type === "NEW_MESSAGE") {
+                counts.messages++;
+            } else if (["CONNECTION_REQUEST", "NEW_QUOTE"].includes(notif.type)) {
+                counts.requests++;
+            }
+        });
+
+        return counts;
+    },
+
     async create(data: typeof notifications.$inferInsert) {
         const [result] = await db.insert(notifications).values(data).returning();
         return result;

@@ -112,7 +112,7 @@ export default function FarmerProductsPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6 pb-12">
             {/* Minimalist Top Indicator */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+            <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE PRODUCTEUR — OFFRES COMMERCIALES</span>
@@ -129,7 +129,7 @@ export default function FarmerProductsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)] mb-2">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)] mb-2">
                 <div className="flex items-center gap-2 mb-3 text-emerald-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-bold uppercase tracking-[2px]">DYNAMIQUES DE VENTE</span>
@@ -152,7 +152,7 @@ export default function FarmerProductsPage() {
 
 
                 {/* Sub-header Category Tabs */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-0">
+                <div className="flex items-center justify-between border-b border-border pb-0">
                     <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-auto">
                         <TabsList variant="line" className="bg-transparent gap-8 h-auto p-0 border-b-0">
                             <TabsTrigger
@@ -183,22 +183,22 @@ export default function FarmerProductsPage() {
                 </div>
 
                 {/* Main Search and Filter Bar */}
-                <div className="bg-slate-50/50 p-2 rounded-xl border border-slate-100 flex flex-col sm:flex-row gap-2 items-center justify-between mt-2">
+                <div className="bg-slate-50/50 p-2 rounded-xl border border-border flex flex-col sm:flex-row gap-2 items-center justify-between mt-2">
                     <div className="relative flex-1 w-full min-w-[200px] group">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                         <Input
                             placeholder="Rechercher un produit..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 pl-8 border-slate-200 bg-white/50 text-[12px] font-medium focus:bg-white transition-all shadow-none rounded-lg w-full"
+                            className="h-8 pl-8 border-border bg-white/50 text-[12px] font-medium focus:bg-white transition-all shadow-none rounded-lg w-full"
                         />
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                            <SelectTrigger className="h-8 w-full sm:w-[140px] bg-white/50 border-slate-200 shadow-none text-[12px] font-medium rounded-lg">
+                            <SelectTrigger className="h-8 w-full sm:w-[140px] bg-white/50 border-border shadow-none text-[12px] font-medium rounded-lg">
                                 <SelectValue placeholder="Catégorie" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200">
+                            <SelectContent className="rounded-xl border-border">
                                 <SelectItem value="all">Toutes les catégories</SelectItem>
                                 {uniqueCategories.map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -206,10 +206,10 @@ export default function FarmerProductsPage() {
                             </SelectContent>
                         </Select>
                         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                            <SelectTrigger className="h-8 w-full sm:w-[120px] bg-white/50 border-slate-200 shadow-none text-[12px] font-medium rounded-lg">
+                            <SelectTrigger className="h-8 w-full sm:w-[120px] bg-white/50 border-border shadow-none text-[12px] font-medium rounded-lg">
                                 <SelectValue placeholder="Statut" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200">
+                            <SelectContent className="rounded-xl border-border">
                                 <SelectItem value="all">Tous les statuts</SelectItem>
                                 <SelectItem value="ACTIVE">En vente</SelectItem>
                                 <SelectItem value="SOLD_OUT">Épuisé</SelectItem>
@@ -224,7 +224,7 @@ export default function FarmerProductsPage() {
                     <Loader2 className="h-8 w-8 text-slate-300 animate-spin" />
                 </div>
             ) : products.length === 0 ? (
-                <div className="border border-slate-200 border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
+                <div className="border border-border border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
                     <div className="text-center space-y-4">
                         <PackageOpen className="w-12 h-12 text-slate-300 mx-auto" />
                         <div className="space-y-1">
@@ -234,19 +234,19 @@ export default function FarmerProductsPage() {
                         <Button
                             variant="outline"
                             onClick={handleAdd}
-                            className="h-9 text-[11px] font-bold text-slate-900 border-slate-200"
+                            className="h-9 text-[11px] font-bold text-slate-900 border-border"
                         >
                             Créer une offre
                         </Button>
                     </div>
                 </div>
             ) : (
-                <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
+                <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
                     <Table>
                         <TableHeader className="bg-slate-50/50">
-                            <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                            <TableRow className="border-border hover:bg-transparent h-10">
                                 <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
+                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
                                 </TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Produit</TableHead>
                                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Catégorie</TableHead>
@@ -260,7 +260,7 @@ export default function FarmerProductsPage() {
                             {filteredProducts.map((product) => (
                                 <TableRow key={product.id} className="border-slate-50 hover:bg-slate-50/20 h-11 group">
                                     <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-slate-200 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-slate-300 transition-colors" />
+                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
                                     </TableCell>
                                     <TableCell className="pl-0 py-2">
                                         <div className="flex items-center gap-3">
@@ -299,7 +299,7 @@ export default function FarmerProductsPage() {
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="rounded-xl border-slate-100 w-40">
+                                            <DropdownMenuContent align="end" className="rounded-xl border-border w-40">
                                                 <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-1.5">Actions</DropdownMenuLabel>
                                                 <DropdownMenuItem onClick={() => handleEdit(product)} className="text-[12px] font-semibold text-slate-700 py-2 cursor-pointer">
                                                     <Edit className="size-3.5 mr-2 text-slate-400" /> Modifier

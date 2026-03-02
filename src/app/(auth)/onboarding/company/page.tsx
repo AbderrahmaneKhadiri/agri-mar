@@ -39,7 +39,9 @@ import {
 } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 const SECTORS = [
     "Agro-industrie",
@@ -69,6 +71,7 @@ export default function CompanyOnboardingPage() {
     const [city, setCity] = useState("");
     const [establishedDate, setEstablishedDate] = useState<Date>();
     const [partnershipType, setPartnershipType] = useState("Spot Buy");
+    const [logoUrl, setLogoUrl] = useState("");
 
     const totalSteps = 5;
     const progress = ((step) / (totalSteps - 1)) * 100;
@@ -124,11 +127,11 @@ export default function CompanyOnboardingPage() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-left pt-4">
-                                    <div className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 space-y-1.5 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100/50 group">
+                                    <div className="p-5 rounded-3xl bg-slate-50/50 border border-border space-y-1.5 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100/50 group">
                                         <div className="text-slate-900 font-extrabold text-lg tracking-tight group-hover:text-blue-600">Direct Producteur</div>
                                         <div className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.1em]">Prix Compétitifs</div>
                                     </div>
-                                    <div className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 space-y-1.5 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100/50 group">
+                                    <div className="p-5 rounded-3xl bg-slate-50/50 border border-border space-y-1.5 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100/50 group">
                                         <div className="text-slate-900 font-extrabold text-lg tracking-tight group-hover:text-blue-600">Traçabilité ONSSA</div>
                                         <div className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.1em]">Qualité Certifiée</div>
                                     </div>
@@ -137,18 +140,30 @@ export default function CompanyOnboardingPage() {
 
                             {/* STEP 1: IDENTITY & SECTOR */}
                             <div className={cn("space-y-6", step !== 1 && "hidden")}>
+                                <div className="flex flex-col items-center gap-2 mb-6">
+                                    <Label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">Logo d'Entreprise (Optionnel)</Label>
+                                    <input type="hidden" name="logoUrl" value={logoUrl} />
+                                    <ImageUpload
+                                        value={logoUrl ? [logoUrl] : []}
+                                        onChange={(urls) => setLogoUrl(urls.length > 0 ? urls[urls.length - 1] : "")}
+                                        onRemove={() => setLogoUrl("")}
+                                        maxFiles={1}
+                                        className="mb-4"
+                                        hidePreview={true}
+                                    />
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="companyName" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Raison Sociale</Label>
                                         <div className="relative">
-                                            <Input id="companyName" name="companyName" placeholder="Ex: Atlas Distribution S.A." required={step === 1} className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold" />
+                                            <Input id="companyName" name="companyName" placeholder="Ex: Atlas Distribution S.A." required={step === 1} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold" />
                                             <Building2 className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type d'Entité</Label>
                                         <Select name="companyType" required={step === 1} defaultValue="Distribution">
-                                            <SelectTrigger className="h-12 bg-slate-50/50 border-slate-100 rounded-xl px-4 text-[13px] font-semibold shadow-none">
+                                            <SelectTrigger className="h-12 bg-slate-50/50 border-border rounded-xl px-4 text-[13px] font-semibold shadow-none">
                                                 <SelectValue placeholder="Choisir type" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl">
@@ -169,7 +184,7 @@ export default function CompanyOnboardingPage() {
                                         <ComboboxInput
                                             id="industry-input"
                                             placeholder="Ex: Agro-industrie, Hôtellerie..."
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl px-4 text-[13px] font-semibold"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl px-4 text-[13px] font-semibold"
                                         />
                                         <ComboboxContent>
                                             <ComboboxEmpty>Aucun secteur trouvé.</ComboboxEmpty>
@@ -193,7 +208,7 @@ export default function CompanyOnboardingPage() {
                                                 <ComboboxInput
                                                     id="city-input"
                                                     placeholder="Ex: Casablanca"
-                                                    className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold"
+                                                    className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold"
                                                 />
                                                 <MapPin className="absolute left-4 top-3.5 size-4 text-slate-400 z-10" />
                                                 <ComboboxContent>
@@ -215,7 +230,7 @@ export default function CompanyOnboardingPage() {
                                         <DatePicker
                                             date={establishedDate}
                                             setDate={setEstablishedDate}
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl px-4 text-[13px] font-semibold"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl px-4 text-[13px] font-semibold"
                                         />
                                     </div>
                                 </div>
@@ -226,10 +241,10 @@ export default function CompanyOnboardingPage() {
                                 <div className="space-y-4">
                                     <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Volume d'achat estimé (par an)</Label>
                                     <Select name="purchasingCapacity" required={step === 2} defaultValue="50 - 200 Tonnes">
-                                        <SelectTrigger className="h-12 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-semibold text-slate-900 shadow-sm transition-all focus:ring-2 focus:ring-blue-100">
+                                        <SelectTrigger className="h-12 bg-white border border-border rounded-xl px-4 text-[13px] font-semibold text-slate-900 shadow-sm transition-all focus:ring-2 focus:ring-blue-100">
                                             <SelectValue placeholder="Choisir un volume" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-slate-200 shadow-xl overflow-hidden">
+                                        <SelectContent className="rounded-xl border-border shadow-xl overflow-hidden">
                                             <SelectItem value="< 10 Tonnes" className="text-[13px] font-medium h-10 hover:bg-slate-50 focus:bg-slate-50">Petit Volume ({"<"} 10 T/an)</SelectItem>
                                             <SelectItem value="10 - 50 Tonnes" className="text-[13px] font-medium h-10 hover:bg-slate-50 focus:bg-slate-50">Volume Moyen (10-50 T/an)</SelectItem>
                                             <SelectItem value="50 - 200 Tonnes" className="text-[13px] font-medium h-10 hover:bg-slate-50 focus:bg-slate-50">Gros Volume (50-200 T/an)</SelectItem>
@@ -250,7 +265,7 @@ export default function CompanyOnboardingPage() {
                                                 "relative cursor-pointer transition-all duration-300 border overflow-hidden group rounded-2xl",
                                                 partnershipType === "Spot Buy"
                                                     ? "border-blue-600 bg-blue-50/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-blue-600/10"
-                                                    : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                                                    : "border-border bg-white hover:border-border hover:shadow-md"
                                             )}
                                             onClick={() => setPartnershipType("Spot Buy")}
                                         >
@@ -273,7 +288,7 @@ export default function CompanyOnboardingPage() {
                                                 "relative cursor-pointer transition-all duration-300 border overflow-hidden group rounded-2xl",
                                                 partnershipType === "Contract"
                                                     ? "border-slate-900 bg-slate-50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/10"
-                                                    : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                                                    : "border-border bg-white hover:border-border hover:shadow-md"
                                             )}
                                             onClick={() => setPartnershipType("Contract")}
                                         >
@@ -310,20 +325,20 @@ export default function CompanyOnboardingPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="iceNumber" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Numéro ICE (15 chiffres)</Label>
                                         <div className="relative">
-                                            <Input id="iceNumber" name="iceNumber" placeholder="Ex: 002134..." required={step === 3} className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-bold tracking-[2px] tabular-nums" />
+                                            <Input id="iceNumber" name="iceNumber" placeholder="Ex: 002134..." required={step === 3} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tracking-[2px] tabular-nums" />
                                             <Building2 className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="rcNumber" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Registre de Commerce (RC)</Label>
                                         <div className="relative">
-                                            <Input id="rcNumber" name="rcNumber" placeholder="Ex: 45678" required={step === 3} className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-bold tabular-nums" />
+                                            <Input id="rcNumber" name="rcNumber" placeholder="Ex: 45678" required={step === 3} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tabular-nums" />
                                             <Scale className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3 mt-4 text-left">
+                                <div className="p-4 rounded-2xl bg-slate-50 border border-border flex items-start gap-3 mt-4 text-left">
                                     <Scale className="size-4 text-slate-400 shrink-0 mt-0.5" />
                                     <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
                                         Votre ICE et RC seront utilisés pour générer automatiquement vos futurs bons de commande et offres commerciales.
@@ -340,14 +355,14 @@ export default function CompanyOnboardingPage() {
                                         <div className="space-y-2">
                                             <Label htmlFor="phone" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Contact Approvisionnement</Label>
                                             <div className="relative">
-                                                <Input id="phone" name="phone" placeholder="+212 6..." required={step === 4} className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-bold tabular-nums" />
+                                                <Input id="phone" name="phone" placeholder="+212 6..." required={step === 4} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tabular-nums" />
                                                 <Phone className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="businessEmail" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Commandes</Label>
                                             <div className="relative">
-                                                <Input id="businessEmail" name="businessEmail" type="email" placeholder="achats@societe.com" required={step === 4} className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold" />
+                                                <Input id="businessEmail" name="businessEmail" type="email" placeholder="achats@societe.com" required={step === 4} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold" />
                                                 <Mail className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                             </div>
                                         </div>
@@ -362,13 +377,13 @@ export default function CompanyOnboardingPage() {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between gap-4">
+                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-border flex items-center justify-between gap-4">
                             {step > 0 ? (
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={prevStep}
-                                    className="h-12 px-6 rounded-xl border-slate-200 text-slate-600 font-bold hover:bg-white"
+                                    className="h-12 px-6 rounded-xl border-border text-slate-600 font-bold hover:bg-white"
                                 >
                                     <ChevronLeft className="size-4 mr-2" /> Retour
                                 </Button>
@@ -399,9 +414,9 @@ export default function CompanyOnboardingPage() {
                 <div className="text-center space-y-2">
                     <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">Plateforme Sourcing Agri-Mar Professionnelle</p>
                     <div className="flex justify-center gap-4 opacity-30 grayscale pointer-events-none scale-75">
-                        <img src="https://img.icons8.com/color/48/safe.png" alt="Safe" />
-                        <img src="https://img.icons8.com/color/48/official-document.png" alt="Doc" />
-                        <img src="https://img.icons8.com/color/48/trust.png" alt="Trust" />
+                        <Image src="https://img.icons8.com/color/48/safe.png" alt="Safe" width={32} height={32} />
+                        <Image src="https://img.icons8.com/color/48/official-document.png" alt="Doc" width={32} height={32} />
+                        <Image src="https://img.icons8.com/color/48/trust.png" alt="Trust" width={32} height={32} />
                     </div>
                 </div>
             </div>

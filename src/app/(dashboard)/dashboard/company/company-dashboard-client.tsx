@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { PartnerDTO, IncomingRequestDTO } from "@/data-access/connections.dal";
 import { ProductSelectDTO } from "@/data-access/products.dal";
+import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
+import { initiateProductInquiryAction } from "@/actions/contact-direct.actions";
+import { useRouter } from "next/navigation";
 import {
     Table,
     TableBody,
@@ -64,6 +67,7 @@ interface CompanyProfile {
     exportCountries: string[];
     requiredCertifications: string[];
     targetRegions: string[];
+    logoUrl?: string | null;
 }
 
 interface CompanyDashboardClientProps {
@@ -71,16 +75,47 @@ interface CompanyDashboardClientProps {
     initialSuppliers: PartnerDTO[];
     initialMarketOffers: (ProductSelectDTO & { farmer: any })[];
     initialRequests: IncomingRequestDTO[];
+    userImage?: string | null;
 }
 
 export function CompanyDashboardClient({
     companyProfile,
     initialSuppliers,
     initialMarketOffers,
-    initialRequests
+    initialRequests,
+    userImage
 }: CompanyDashboardClientProps) {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState("suppliers");
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Product Detail Modal State
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
+    const [isContacting, setIsContacting] = useState<string | null>(null);
+
+    const handleViewProductDetail = (product: any) => {
+        setSelectedProduct(product);
+        setIsProductModalOpen(true);
+    };
+
+    const handleContactSeller = async (product: any) => {
+        const farmerId = product.farmer?.id;
+        if (!farmerId || isContacting) return;
+
+        setIsContacting(product.id);
+        const result = await initiateProductInquiryAction({
+            farmerId,
+            product
+        });
+
+        if (result.error) {
+            alert(result.error);
+            setIsContacting(null);
+        } else {
+            router.push(`/dashboard/company/messages`);
+        }
+    };
 
     const filteredSuppliers = initialSuppliers.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,7 +171,7 @@ export function CompanyDashboardClient({
                             placeholder="Rechercher..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 pl-8 text-[12px] bg-slate-50/50 border-slate-200 focus:bg-white transition-all shadow-none"
+                            className="h-8 pl-8 text-[12px] bg-slate-50/50 border-border focus:bg-white transition-all shadow-none"
                         />
                     </div>
                 </div>
@@ -147,9 +182,9 @@ export function CompanyDashboardClient({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Company Info */}
                         <div className="md:col-span-2 space-y-6">
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-blue-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <Building2 className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Identité Corporate</span>
                                     </div>
@@ -198,7 +233,7 @@ export function CompanyDashboardClient({
                                                 <div>
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Conformité</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                        <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none font-bold text-[10px] uppercase">ICE: {companyProfile.iceNumber}</Badge>
+                                                        <Badge className="bg-slate-900 text-white hover:bg-slate-800 border-none font-bold text-[10px] uppercase">ICE: {companyProfile.iceNumber}</Badge>
                                                         <Badge variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none font-bold text-[10px] uppercase">RC: {companyProfile.rcNumber}</Badge>
                                                     </div>
                                                 </div>
@@ -208,9 +243,9 @@ export function CompanyDashboardClient({
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <PackageSearch className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Stratégie Sourcing</span>
                                     </div>
@@ -221,14 +256,14 @@ export function CompanyDashboardClient({
                                         <div className="space-y-6">
                                             <div>
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Volume Annuel</div>
-                                                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                                                    <div className="text-[15px] font-bold text-emerald-900">{companyProfile.purchasingCapacity}</div>
-                                                    <div className="text-[10px] font-bold text-emerald-600 uppercase mt-1">Capacité d'achat estimée</div>
+                                                <div className="p-4 rounded-xl bg-slate-50 border border-border">
+                                                    <div className="text-[15px] font-semibold text-slate-900">{companyProfile.purchasingCapacity}</div>
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">Capacité d&apos;achat estimée</div>
                                                 </div>
                                             </div>
                                             <div>
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type de Partenariat</div>
-                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-border">
                                                     {companyProfile.partnershipType === "Spot Buy" ? (
                                                         <>
                                                             <Store className="size-4 text-slate-600" />
@@ -249,20 +284,20 @@ export function CompanyDashboardClient({
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Contact Sourcing</div>
                                                 <div className="space-y-3">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                                        <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
                                                             <Phone className="size-3.5" />
                                                         </div>
                                                         <div className="text-[13px] font-bold text-slate-900 tabular-nums">{companyProfile.phone}</div>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                                        <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
                                                             <Mail className="size-3.5" />
                                                         </div>
                                                         <div className="text-[13px] font-bold text-slate-900">{companyProfile.businessEmail}</div>
                                                     </div>
                                                     {companyProfile.website && (
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                                            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
                                                                 <Globe className="size-3.5" />
                                                             </div>
                                                             <div className="text-[13px] font-bold text-slate-900 truncate">
@@ -279,9 +314,9 @@ export function CompanyDashboardClient({
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
-                                    <div className="flex items-center gap-2 text-amber-600 mb-1">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
                                         <ShoppingBag className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Activité & Marché</span>
                                     </div>
@@ -315,12 +350,7 @@ export function CompanyDashboardClient({
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Portée du Marché</div>
                                                 <div className="space-y-3">
                                                     <div className="flex items-center gap-2">
-                                                        <Badge className={cn(
-                                                            "font-bold text-[10px] uppercase border-none",
-                                                            companyProfile.marketType === "INTERNATIONAL" ? "bg-purple-100 text-purple-700" :
-                                                                companyProfile.marketType === "BOTH" ? "bg-amber-100 text-amber-700" :
-                                                                    "bg-blue-100 text-blue-700"
-                                                        )}>
+                                                        <Badge className="bg-slate-100 text-slate-700 font-bold text-[10px] uppercase border-none">
                                                             {companyProfile.marketType === "BOTH" ? "Local & International" : companyProfile.marketType}
                                                         </Badge>
                                                     </div>
@@ -339,7 +369,7 @@ export function CompanyDashboardClient({
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {Array.isArray(companyProfile.requiredCertifications) && companyProfile.requiredCertifications.length > 0 ? (
                                                         companyProfile.requiredCertifications.map((c: string) => (
-                                                            <Badge key={c} variant="outline" className="border-slate-200 text-slate-500 font-bold text-[9px] uppercase">
+                                                            <Badge key={c} variant="outline" className="border-border text-slate-500 font-bold text-[9px] uppercase">
                                                                 {c}
                                                             </Badge>
                                                         ))
@@ -356,9 +386,10 @@ export function CompanyDashboardClient({
 
                         {/* Company Summary */}
                         <div className="space-y-6">
-                            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+                            <Card className="border-border shadow-sm overflow-hidden bg-white">
                                 <CardContent className="p-8 text-center space-y-4">
-                                    <Avatar className="mx-auto w-20 h-20 ring-4 ring-slate-100">
+                                    <Avatar className="mx-auto w-24 h-24 ring-4 ring-slate-100 shadow-sm">
+                                        <AvatarImage src={companyProfile.logoUrl || userImage || undefined} className="object-cover" />
                                         <AvatarFallback className="bg-slate-50 text-slate-300 text-2xl font-black">
                                             {companyProfile.companyName?.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
@@ -367,7 +398,7 @@ export function CompanyDashboardClient({
                                         <h3 className="text-xl font-bold text-slate-900">
                                             {calculateCompanyScore(companyProfile) >= 80 ? "Acheteur Certifié" : "Acheteur Business"}
                                         </h3>
-                                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[2px]">Actif sur Agri-Mar</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">Actif sur Agri-Mar</p>
                                     </div>
                                     <div className="pt-4 space-y-3">
                                         <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Régions Cibles</div>
@@ -380,35 +411,32 @@ export function CompanyDashboardClient({
                                 </CardContent>
                             </Card>
 
-                            <Card className={cn(
-                                "border-none shadow-xl shadow-blue-100 p-8 text-white relative overflow-hidden group",
-                                calculateCompanyScore(companyProfile) >= 80 ? "bg-blue-900" : "bg-slate-900"
-                            )}>
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                                    <ShieldCheck className="size-24" />
+                            <div className="border border-border rounded-xl p-5 bg-white border-l-2 border-l-black">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <ShieldCheck className="size-4 text-slate-700" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                                        {calculateCompanyScore(companyProfile) >= 80 ? "Compte Certifié" : "Score de Confiance"}
+                                    </span>
                                 </div>
-                                <h3 className="text-lg font-bold mb-2">
-                                    {calculateCompanyScore(companyProfile) >= 80 ? "Compte Certifié" : "Compte Business"}
-                                </h3>
-                                <p className="text-blue-100/80 text-[13px] leading-relaxed mb-6 font-medium">
+                                <p className="text-[13px] text-slate-600 leading-relaxed mb-4">
                                     {calculateCompanyScore(companyProfile) >= 80
-                                        ? "Votre badge de 'Confiance B2B' est actif. Il rassure les producteurs sur votre sérieux."
-                                        : "Vérifiez votre ICE et votre RC pour obtenir le badge de confiance Agry-Mar."}
+                                        ? "Votre badge \"Confiance B2B\" est actif. Il rassure les producteurs sur votre sérieux."
+                                        : "Vérifiez votre ICE et votre RC pour obtenir le badge de confiance Agri-Mar."}
                                 </p>
                                 {calculateCompanyScore(companyProfile) >= 80 && (
-                                    <Button className="w-full bg-white text-blue-900 hover:bg-blue-50 font-bold rounded-xl h-12 text-[13px]">
+                                    <Button size="sm" className="w-full text-[13px]">
                                         Télécharger Attestation
                                     </Button>
                                 )}
-                            </Card>
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : (
-                <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm min-h-[400px]">
+                <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm min-h-[400px]">
                     <Table>
                         <TableHeader className="bg-slate-50/50 font-bold">
-                            <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                            <TableRow className="border-border hover:bg-transparent h-10">
                                 {activeTab === "suppliers" && (
                                     <>
                                         <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-4">Partenaire</TableHead>
@@ -457,7 +485,7 @@ export function CompanyDashboardClient({
                                             {format(new Date(s.since), "d MMM yyyy", { locale: fr })}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[10px] font-bold rounded-full">Actif</Badge>
+                                            <Badge variant="outline" className="bg-slate-50 text-slate-600 border-border text-[10px] font-bold rounded-full">Actif</Badge>
                                         </TableCell>
                                         <TableCell className="text-[12px] text-slate-500 font-medium">
                                             <div className="flex items-center gap-1.5"><MapPin className="size-3 opacity-40" /> {s.location}</div>
@@ -470,12 +498,19 @@ export function CompanyDashboardClient({
                                 filteredMarket.length === 0 ? (
                                     <TableRow><TableCell colSpan={6} className="h-40 text-center text-slate-400 italic">Aucune offre disponible.</TableCell></TableRow>
                                 ) : filteredMarket.map((m) => (
-                                    <TableRow key={m.id} className="border-slate-50 hover:bg-slate-50/20 h-14">
+                                    <TableRow
+                                        key={m.id}
+                                        className="border-slate-50 hover:bg-slate-50/20 h-14 cursor-pointer"
+                                        onClick={() => handleViewProductDetail(m)}
+                                    >
                                         <TableCell className="pl-4 py-2">
                                             <div className="flex items-center gap-3">
-                                                <div className="size-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
-                                                    <Tractor className="size-4 text-slate-400" />
-                                                </div>
+                                                <Avatar className="size-8 rounded-lg border border-border">
+                                                    <AvatarImage src={m.images?.[0] || undefined} className="object-cover" />
+                                                    <AvatarFallback className="bg-slate-50">
+                                                        <Tractor className="size-4 text-slate-400" />
+                                                    </AvatarFallback>
+                                                </Avatar>
                                                 <div className="flex flex-col">
                                                     <span className="font-semibold text-[13px] text-slate-900">{m.name}</span>
                                                     <span className="text-[10px] text-slate-400 font-medium">{m.unit}</span>
@@ -489,7 +524,7 @@ export function CompanyDashboardClient({
                                             {m.price} MAD
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="bg-slate-50 border-slate-200 text-slate-600 text-[10px] font-bold rounded-full">{m.category}</Badge>
+                                            <Badge variant="outline" className="bg-slate-50 border-border text-slate-600 text-[10px] font-bold rounded-full">{m.category}</Badge>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -519,7 +554,7 @@ export function CompanyDashboardClient({
                                             <div className="flex items-center gap-1.5"><MapPin className="size-3 opacity-40" /> {r.location}</div>
                                         </TableCell>
                                         <TableCell className="text-right pr-4">
-                                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-100 text-[10px] font-bold rounded-full">En attente</Badge>
+                                            <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full border-none">En attente</Badge>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -528,6 +563,14 @@ export function CompanyDashboardClient({
                     </Table>
                 </div>
             )}
+
+            <ProductDetailModal
+                isOpen={isProductModalOpen}
+                onOpenChange={setIsProductModalOpen}
+                product={selectedProduct}
+                onContactSeller={handleContactSeller}
+                isContacting={isContacting === selectedProduct?.id}
+            />
         </div>
     );
 }

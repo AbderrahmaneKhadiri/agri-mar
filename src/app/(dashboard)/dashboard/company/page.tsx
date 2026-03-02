@@ -54,21 +54,21 @@ export default async function CompanyDashboardPage() {
             value: suppliers.length,
             desc: "Partenariats actifs",
             icon: Building2,
-            iconClass: "text-slate-700 bg-slate-100 border border-slate-200/60"
+            iconClass: "text-slate-700 bg-slate-100 border border-border/60"
         },
         {
             title: "Demandes",
             value: requests.length,
             desc: "Prises de contact",
             icon: Inbox,
-            iconClass: "text-slate-700 bg-slate-100 border border-slate-200/60"
+            iconClass: "text-slate-700 bg-slate-100 border border-border/60"
         },
     ];
 
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
             {/* Minimalist Top Indicator */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100/60 pl-2">
+            <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE PILOTAGE</span>
@@ -84,7 +84,7 @@ export default async function CompanyDashboardPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-3 text-blue-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
@@ -108,7 +108,7 @@ export default async function CompanyDashboardPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat, i) => (
-                    <Card key={i} className="@container/card bg-white shadow-sm border-slate-100">
+                    <Card key={i} className="@container/card bg-white shadow-sm border-border">
                         <CardHeader>
                             <div className="flex items-center justify-between mb-2">
                                 <CardDescription className="text-[13px] font-medium text-slate-500">{stat.title}</CardDescription>
@@ -131,7 +131,7 @@ export default async function CompanyDashboardPage() {
                 <ConfidenceScoreCard
                     score={calculateCompanyScore(profile)}
                     role="COMPANY"
-                    className="md:col-span-2 lg:col-span-1 shadow-none border-slate-100 rounded-xl"
+                    className="md:col-span-2 lg:col-span-1 shadow-none border-border rounded-xl"
                 />
             </div>
 
@@ -140,6 +140,7 @@ export default async function CompanyDashboardPage() {
                 initialSuppliers={suppliers}
                 initialMarketOffers={marketOffers as any}
                 initialRequests={requests}
+                userImage={session.user.image}
             />
         </main>
     );

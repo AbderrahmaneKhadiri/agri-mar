@@ -131,7 +131,7 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
 
     if (requests.length === 0) {
         return (
-            <div className="border border-slate-200 border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
+            <div className="border border-border border-dashed rounded-xl bg-slate-50/50 min-h-[400px] flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <Clipboard className="w-12 h-12 text-slate-200 mx-auto" />
                     <p className="text-[14px] font-semibold text-slate-900">Aucune demande envoyée</p>
@@ -144,14 +144,14 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
         <div className="space-y-4">
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                 {/* Main Search and Filter Bar */}
-                <div className="bg-slate-50/50 p-2 rounded-xl border border-slate-100 flex flex-col md:flex-row items-center gap-2 flex-1 w-full lg:max-w-3xl">
+                <div className="bg-slate-50/50 p-2 rounded-xl border border-border flex flex-col md:flex-row items-center gap-2 flex-1 w-full lg:max-w-3xl">
                     <div className="relative flex-1 w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
                         <Input
                             placeholder="Rechercher un agriculteur ou une ferme..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-slate-200 shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-slate-300 focus:border-emerald-500 transition-colors"
+                            className="w-full bg-white border border-border shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-border focus:border-emerald-500 transition-colors"
                         />
                     </div>
 
@@ -159,10 +159,10 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
 
                     <div className="flex items-center gap-2 w-full md:w-auto">
                         <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                            <SelectTrigger className="w-full md:w-[180px] h-10 bg-white border-slate-200 shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-slate-300">
+                            <SelectTrigger className="w-full md:w-[180px] h-10 bg-white border-border shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-border">
                                 <SelectValue placeholder="Toutes les régions" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                            <SelectContent className="rounded-xl border-border shadow-lg">
                                 <SelectItem value="all" className="text-[13px] font-medium cursor-pointer">Toutes les régions</SelectItem>
                                 {uniqueRegions.map(region => (
                                     <SelectItem key={region} value={region} className="text-[13px] font-medium cursor-pointer">
@@ -173,10 +173,10 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                         </Select>
 
                         <Select value={selectedCrop} onValueChange={setSelectedCrop}>
-                            <SelectTrigger className="w-full md:w-[180px] h-10 bg-white border-slate-200 shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-slate-300">
+                            <SelectTrigger className="w-full md:w-[180px] h-10 bg-white border-border shadow-sm rounded-lg text-[13px] font-medium text-slate-700 hover:border-border">
                                 <SelectValue placeholder="Toutes les cultures" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                            <SelectContent className="rounded-xl border-border shadow-lg">
                                 <SelectItem value="all" className="text-[13px] font-medium cursor-pointer">Toutes les cultures</SelectItem>
                                 {uniqueCrops.map(crop => (
                                     <SelectItem key={crop} value={crop} className="text-[13px] font-medium cursor-pointer">
@@ -191,12 +191,12 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                 <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-10 px-4 text-[13px] font-medium text-slate-700 bg-white border-slate-200 hover:bg-slate-50 gap-2 rounded-lg shadow-sm">
+                            <Button variant="outline" size="sm" className="h-10 px-4 text-[13px] font-medium text-slate-700 bg-white border-border hover:bg-slate-50 gap-2 rounded-lg shadow-sm">
                                 <Filter className="size-4" />
                                 Trier par
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white border-slate-200 shadow-xl rounded-xl">
+                        <DropdownMenuContent align="end" className="w-48 bg-white border-border shadow-xl rounded-xl">
                             <DropdownMenuLabel className="text-xs font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Ordre d'envoi</DropdownMenuLabel>
                             <DropdownMenuSeparator className="bg-slate-100" />
                             <DropdownMenuRadioGroup value={sortOrder} onValueChange={setSortOrder}>
@@ -212,10 +212,10 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                 </div>
             </div>
 
-            <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
+            <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-slate-50/50">
-                        <TableRow className="border-slate-100 hover:bg-transparent h-10">
+                        <TableRow className="border-border hover:bg-transparent h-10">
                             <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-4">Destinataire</TableHead>
                             <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Date d'envoi</TableHead>
                             <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</TableHead>
@@ -265,7 +265,7 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleViewProfile(request)}
-                                                className="h-7 px-3 border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider rounded-lg"
+                                                className="h-7 px-3 border-border text-slate-600 font-bold text-[10px] uppercase tracking-wider rounded-lg"
                                             >
                                                 Profil
                                             </Button>

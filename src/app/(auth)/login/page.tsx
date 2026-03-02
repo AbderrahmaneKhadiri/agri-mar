@@ -83,7 +83,7 @@ export default function LoginPage() {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             required
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all shadow-none"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all shadow-none"
                                         />
                                         <Mail className="absolute left-4 top-3.5 size-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                     </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
-                                            className="h-12 bg-slate-50/50 border-slate-100 rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all shadow-none"
+                                            className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-semibold focus:bg-white transition-all shadow-none"
                                         />
                                         <Lock className="absolute left-4 top-3.5 size-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                     </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-slate-100 flex flex-col space-y-6">
+                        <CardFooter className="p-8 md:p-10 bg-slate-50/50 border-t border-border flex flex-col space-y-6">
                             <Button
                                 type="submit"
                                 disabled={loading}

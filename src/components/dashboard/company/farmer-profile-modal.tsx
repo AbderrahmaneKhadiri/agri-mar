@@ -52,9 +52,9 @@ export function FarmerProfileModal({ isOpen, onOpenChange, data }: FarmerProfile
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border border-slate-200 shadow-2xl">
+            <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border border-border shadow-2xl">
                 <div className="flex flex-col">
-                    <div className="h-24 bg-slate-50 w-full relative border-b border-slate-100">
+                    <div className="h-24 bg-slate-50 w-full relative border-b border-border">
                         <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,var(--slate-200)_1px,transparent_1px)] [background-size:20px_20px]" />
                     </div>
                     <div className="px-8 pb-8 -mt-8 relative">
