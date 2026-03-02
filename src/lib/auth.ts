@@ -12,6 +12,13 @@ export const auth = betterAuth({
     emailVerification: {
         sendOnSignUp: false,
     },
+    advanced: {
+        useSecureCookies: process.env.NODE_ENV === "production",
+    },
+    trustedOrigins: [
+        process.env.NEXT_PUBLIC_APP_URL || "",
+        "https://agri-mar-s97y.vercel.app"
+    ],
     emailAndPassword: {
         enabled: true,
     },
