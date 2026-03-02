@@ -78,7 +78,9 @@ export default function LoginPage() {
                                     <div className="relative group">
                                         <Input
                                             id="email"
+                                            name="email"
                                             type="email"
+                                            autoComplete="username"
                                             placeholder="vous@exemple.com"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
@@ -91,13 +93,15 @@ export default function LoginPage() {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-1">
-                                        <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mot de passe</Label>
+                                        <Label htmlFor="password" title="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mot de passe</Label>
                                         <a href="#" className="text-[11px] font-bold text-emerald-600 hover:underline">Oublié ?</a>
                                     </div>
                                     <div className="relative group">
                                         <Input
                                             id="password"
+                                            name="password"
                                             type="password"
+                                            autoComplete="current-password"
                                             placeholder="********"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
