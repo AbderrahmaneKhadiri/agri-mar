@@ -35,6 +35,7 @@ export type FarmerListDTO = {
     livestockType?: string | null;
     phone?: string;
     businessEmail?: string;
+    parcelPolygonId?: string;
 };
 
 /**
@@ -75,6 +76,7 @@ export const getFarmersList = cache(async (filters?: FarmerFilters): Promise<Far
         livestockType: farmer.livestockType,
         phone: farmer.phone,
         businessEmail: farmer.businessEmail,
+        parcelPolygonId: (farmer as any).parcelPolygonId,
     }));
 });
 
@@ -109,6 +111,7 @@ export type FarmerDetailDTO = {
     longTermContractAvailable: boolean;
     livestockType?: string | null;
     avgAnnualProduction: string;
+    parcelPolygonId?: string;
 };
 
 import { checkConnectionStatus } from '@/persistence/data-access/connections.db';
@@ -156,6 +159,7 @@ export const getFarmerDetails = cache(async (farmerId: string, companyId?: strin
         longTermContractAvailable: farmer.longTermContractAvailable,
         livestockType: farmer.livestockType,
         avgAnnualProduction: farmer.avgAnnualProduction,
+        parcelPolygonId: (farmer as any).parcelPolygonId,
     };
 });
 

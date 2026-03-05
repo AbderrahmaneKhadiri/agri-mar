@@ -28,7 +28,7 @@ export async function submitFarmerOnboardingAction(prevState: any, formData: For
         const certifications = formData.getAll("certifications") as string[];
         const farmingMethods = formData.getAll("farmingMethods") as string[];
         const seasonAvailability = formData.getAll("seasonAvailability") as string[];
-        const irrigationType = formData.getAll("irrigationType") as string[];
+        const irrigationType = formData.get("irrigationType") as string;
         const businessModel = formData.getAll("businessModel") as string[];
 
         const hasColdStorage = formData.get("hasColdStorage") === "true" || formData.get("hasColdStorage") === "on";
@@ -55,6 +55,7 @@ export async function submitFarmerOnboardingAction(prevState: any, formData: For
         const parsed = farmerProfileSchema.safeParse(dataToValidate);
 
         if (!parsed.success) {
+            console.error("Farmer Onboarding Validation [Fails]:", parsed.error.flatten().fieldErrors);
             return { error: "Données invalides", fields: parsed.error.flatten().fieldErrors };
         }
 

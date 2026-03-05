@@ -313,6 +313,7 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                             longTermContractAvailable: selectedFarmer.longTermContractAvailable,
                                             phone: selectedFarmer.phone,
                                             email: selectedFarmer.businessEmail,
+                                            parcelPolygonId: selectedFarmer.parcelPolygonId,
                                         }}
                                     />
                                 </CardContent>

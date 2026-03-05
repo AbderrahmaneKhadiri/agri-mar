@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, MessageSquare, UserPlus, CheckCircle2, MoreHorizontal, Clock } from "lucide-react";
+import { Bell, MessageSquare, UserPlus, CheckCircle2, MoreHorizontal, Clock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -91,6 +91,7 @@ export function NotificationBell({ userId }: { userId?: string }) {
             case "NEW_MESSAGE": return <MessageSquare className="h-4 w-4 text-emerald-600" />;
             case "CONNECTION_REQUEST": return <UserPlus className="h-4 w-4 text-emerald-600" />;
             case "CONNECTION_ACCEPTED": return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+            case "SYSTEM_ALERT": return <AlertTriangle className="h-4 w-4 text-red-500" />;
             default: return <Bell className="h-4 w-4 text-slate-400" />;
         }
     };

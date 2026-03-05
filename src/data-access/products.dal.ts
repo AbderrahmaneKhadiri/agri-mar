@@ -1,5 +1,5 @@
 import { db } from "@/persistence/db";
-import { products, farmerProfiles } from "@/persistence/schema";
+import { products, farmerProfiles, parcels } from "@/persistence/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 
 export type ProductInsertDTO = typeof products.$inferInsert;
@@ -53,22 +53,44 @@ export async function getMarketplaceProducts(filters?: { category?: string, sear
         conditions.push(ilike(products.name, `%${filters.search}%`));
     }
 
-    return db.query.products.findMany({
-        where: and(...conditions),
-        orderBy: [desc(products.createdAt)],
-        with: {
-            farmer: true
-        }
-    });
+    const results = await db.select({
+        product: products,
+        farmer: farmerProfiles,
+    })
+        .from(products)
+        .leftJoin(farmerProfiles, eq(products.farmerId, farmerProfiles.id))
+        .where(and(...conditions))
+        .orderBy(desc(products.createdAt));
+
+    const farmerIds = Array.from(new Set(results.map(r => r.farmer!.id)));
+    const allParcels = farmerIds.length > 0
+        ? await db.select().from(parcels).where(sql`${parcels.farmerId} in ${farmerIds}`)
+        : [];
+
+    return results.map(row => ({
+        ...row.product,
+        farmer: row.farmer ? {
+            ...row.farmer,
+            parcels: allParcels.filter(p => p.farmerId === row.farmer!.id)
+        } : null
+    }));
 }
 
 export async function getProductById(id: string) {
-    return db.query.products.findFirst({
-        where: eq(products.id, id),
-        with: {
-            farmer: true
-        }
-    });
+    const results = await db.select({
+        product: products,
+        farmer: farmerProfiles,
+    })
+        .from(products)
+        .leftJoin(farmerProfiles, eq(products.farmerId, farmerProfiles.id))
+        .where(eq(products.id, id));
+
+    if (results.length === 0) return null;
+
+    return {
+        ...results[0].product,
+        farmer: results[0].farmer
+    };
 }
 
 /**

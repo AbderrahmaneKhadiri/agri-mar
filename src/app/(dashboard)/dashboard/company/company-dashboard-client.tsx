@@ -6,6 +6,9 @@ import { ProductSelectDTO } from "@/data-access/products.dal";
 import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
 import { initiateProductInquiryAction } from "@/actions/contact-direct.actions";
 import { useRouter } from "next/navigation";
+import { CreateTenderModal } from "@/components/dashboard/company/create-tender-modal";
+import { ViewBidsModal } from "@/components/dashboard/company/view-bids-modal";
+import { TenderSelectDTO } from "@/data-access/tenders.dal";
 import {
     Table,
     TableBody,
@@ -37,7 +40,9 @@ import {
     Tractor,
     Globe,
     ShoppingBag,
-    Flag
+    Flag,
+    ClipboardList,
+    PlusCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -75,6 +80,7 @@ interface CompanyDashboardClientProps {
     initialSuppliers: PartnerDTO[];
     initialMarketOffers: (ProductSelectDTO & { farmer: any })[];
     initialRequests: IncomingRequestDTO[];
+    initialTenders: (TenderSelectDTO & { bids: any[] })[];
     userImage?: string | null;
 }
 
@@ -83,6 +89,7 @@ export function CompanyDashboardClient({
     initialSuppliers,
     initialMarketOffers,
     initialRequests,
+    initialTenders,
     userImage
 }: CompanyDashboardClientProps) {
     const router = useRouter();
@@ -94,9 +101,19 @@ export function CompanyDashboardClient({
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [isContacting, setIsContacting] = useState<string | null>(null);
 
+    // Tender Modal State
+    const [isTenderModalOpen, setIsTenderModalOpen] = useState(false);
+    const [isViewBidsModalOpen, setIsViewBidsModalOpen] = useState(false);
+    const [selectedTender, setSelectedTender] = useState<any>(null);
+
     const handleViewProductDetail = (product: any) => {
         setSelectedProduct(product);
         setIsProductModalOpen(true);
+    };
+
+    const handleViewBids = (tender: any) => {
+        setSelectedTender(tender);
+        setIsViewBidsModalOpen(true);
     };
 
     const handleContactSeller = async (product: any) => {
@@ -132,6 +149,11 @@ export function CompanyDashboardClient({
         r.location?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const filteredTenders = initialTenders.filter(t =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
@@ -156,6 +178,12 @@ export function CompanyDashboardClient({
                             Demandes en cours <Badge className="bg-slate-100 text-slate-600 rounded-full text-[10px] px-1.5 py-0 font-bold border-none ml-1">{initialRequests.length}</Badge>
                         </TabsTrigger>
                         <TabsTrigger
+                            value="tenders"
+                            className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none flex items-center gap-1.5 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:text-slate-900 border-none"
+                        >
+                            Appels d&apos;Offres <Badge className="bg-slate-100 text-slate-600 rounded-full text-[10px] px-1.5 py-0 font-bold border-none ml-1">{initialTenders.length}</Badge>
+                        </TabsTrigger>
+                        <TabsTrigger
                             value="profile"
                             className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:text-slate-900 border-none ml-4"
                         >
@@ -174,6 +202,16 @@ export function CompanyDashboardClient({
                             className="h-8 pl-8 text-[12px] bg-slate-50/50 border-border focus:bg-white transition-all shadow-none"
                         />
                     </div>
+                    {activeTab === "tenders" && (
+                        <Button
+                            onClick={() => setIsTenderModalOpen(true)}
+                            size="sm"
+                            className="h-8 rounded-lg bg-slate-900 text-white font-bold text-[11px] uppercase tracking-wider px-4"
+                        >
+                            <PlusCircle className="size-3.5 mr-2" />
+                            Nouvel Appel d&apos;Offre
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -461,6 +499,15 @@ export function CompanyDashboardClient({
                                         <TableHead className="text-right pr-4 font-bold"></TableHead>
                                     </>
                                 )}
+                                {activeTab === "tenders" && (
+                                    <>
+                                        <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-4">Appel d&apos;Offre</TableHead>
+                                        <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Quantité</TableHead>
+                                        <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</TableHead>
+                                        <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Offres reçues</TableHead>
+                                        <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Deadline</TableHead>
+                                    </>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -559,6 +606,51 @@ export function CompanyDashboardClient({
                                     </TableRow>
                                 ))
                             )}
+
+                            {activeTab === "tenders" && (
+                                filteredTenders.length === 0 ? (
+                                    <TableRow><TableCell colSpan={6} className="h-40 text-center text-slate-400 italic">Aucun appel d&apos;offre publié.</TableCell></TableRow>
+                                ) : filteredTenders.map((t) => (
+                                    <TableRow key={t.id} className="border-slate-50 hover:bg-slate-50/20 h-14">
+                                        <TableCell className="pl-4 py-2">
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-[13px] text-slate-900">{t.title}</span>
+                                                <span className="text-[10px] text-slate-400 font-medium lowercase tracking-tight">{t.category}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-[12px] font-bold text-slate-900">
+                                            {t.quantity} {t.unit}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={cn(
+                                                "text-[10px] font-bold rounded-full border-none px-2",
+                                                t.status === "OPEN" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                                            )}>
+                                                {t.status === "OPEN" ? "OUVERT" : t.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[12px] font-bold text-slate-700">{t.bids?.length || 0} offre(s)</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-[12px] text-slate-500 font-medium">
+                                            {format(new Date(t.deadline), "d MMM yyyy", { locale: fr })}
+                                        </TableCell>
+                                        <TableCell className="text-right pr-4">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleViewBids(t)}
+                                                className="h-8 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-wider"
+                                            >
+                                                Voir Offres ({t.bids?.length || 0})
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </div>
@@ -570,6 +662,17 @@ export function CompanyDashboardClient({
                 product={selectedProduct}
                 onContactSeller={handleContactSeller}
                 isContacting={isContacting === selectedProduct?.id}
+            />
+
+            <CreateTenderModal
+                isOpen={isTenderModalOpen}
+                onOpenChange={setIsTenderModalOpen}
+            />
+
+            <ViewBidsModal
+                isOpen={isViewBidsModalOpen}
+                onOpenChange={setIsViewBidsModalOpen}
+                tender={selectedTender}
             />
         </div>
     );

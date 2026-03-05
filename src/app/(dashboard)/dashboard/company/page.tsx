@@ -2,35 +2,25 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { companyRepository } from "@/persistence/repositories/company.repository";
-import { eq, and, desc } from "drizzle-orm";
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardFooter,
-    CardAction
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-    TrendingUp,
-    ChevronDown,
-    ArrowUpRight,
-    Building2,
-    Inbox,
-    Globe
-} from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { getAcceptedPartners, getOutgoingRequests } from "@/data-access/connections.dal";
 import { getMarketplaceProducts, getMarketChartData } from "@/data-access/products.dal";
-import { CompanyDashboardClient } from "./company-dashboard-client";
+import { getCompanyTenders } from "@/data-access/tenders.dal";
+import { getFarmersList } from "@/data-access/farmers.dal";
+import { getHistoricalNDVIAction } from "@/actions/agromonitoring.actions";
+import { CompanyDashboardTabs } from "@/components/dashboard/company/company-dashboard-tabs";
+import { CompanyOverview } from "@/components/dashboard/company/company-overview";
 import { calculateCompanyScore } from "@/lib/utils/profile-score";
 import { ConfidenceScoreCard } from "@/components/dashboard/confidence-score-card";
-import { MarketBarChart } from "@/components/dashboard/company/market-bar-chart";
 import { cn } from "@/lib/utils";
 
-export default async function CompanyDashboardPage() {
+export default async function CompanyDashboardPage({
+    searchParams
+}: {
+    searchParams: Promise<{ tab?: string }>
+}) {
+    const { tab } = await searchParams;
     const session = await auth.api.getSession({
         headers: await headers()
     });
@@ -40,108 +30,105 @@ export default async function CompanyDashboardPage() {
     const profile = await companyRepository.findByUserId(session.user.id);
     if (!profile) redirect("/onboarding/company");
 
-    // Parallel data fetching for performance
-    const [suppliers, marketOffers, requests, marketChartData] = await Promise.all([
+    const [suppliers, marketOffers, requests, marketChartData, tenders, allFarmers] = await Promise.all([
         getAcceptedPartners(profile.id, "COMPANY"),
         getMarketplaceProducts(),
         getOutgoingRequests(profile.id, "COMPANY"),
-        getMarketChartData()
+        getMarketChartData(),
+        getCompanyTenders(profile.id),
+        getFarmersList()
     ]);
 
-    const stats = [
-        {
-            title: "Mes Fournisseurs",
-            value: suppliers.length,
-            desc: "Partenariats actifs",
-            icon: Building2,
-            iconClass: "text-slate-700 bg-slate-100 border border-border/60"
-        },
-        {
-            title: "Demandes",
-            value: requests.length,
-            desc: "Prises de contact",
-            icon: Inbox,
-            iconClass: "text-slate-700 bg-slate-100 border border-border/60"
-        },
-    ];
+    // Monitored area from accepted suppliers
+    let totalMonitoredArea = 0;
+    suppliers.forEach(supplier => {
+        const fullProfile = allFarmers.find(f => f.id === supplier.id);
+        if (fullProfile?.totalAreaHectares) {
+            totalMonitoredArea += parseFloat(fullProfile.totalAreaHectares);
+        }
+    });
+
+    // Average NDVI across supplier parcels
+    let totalNdvi = 0;
+    let monitoredParcelsCount = 0;
+    await Promise.all(
+        suppliers.map(async (supplier) => {
+            if (supplier.parcelPolygonId) {
+                try {
+                    const result = await getHistoricalNDVIAction(supplier.parcelPolygonId);
+                    if (result.data && result.data.length > 0) {
+                        totalNdvi += result.data[result.data.length - 1].data.mean;
+                        monitoredParcelsCount++;
+                    }
+                } catch { /* silent */ }
+            }
+        })
+    );
+    const averageNdvi = monitoredParcelsCount > 0 ? (totalNdvi / monitoredParcelsCount).toFixed(2) : "--";
 
     return (
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:p-6 lg:gap-6">
-            {/* Minimalist Top Indicator */}
-            <div className="flex items-center justify-between pb-4 border-b border-border/60 pl-2">
-                <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">ESPACE ACHETEUR — CENTRE DE PILOTAGE</span>
+        <main className="flex flex-1 flex-col gap-5 p-4 lg:p-6">
+            {/* Top bar */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#2c5f42]" />
+                    <span className="uppercase tracking-[2px] font-medium">Espace Acheteur</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-[1px]">{profile.companyName}</span>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-[12px] text-slate-400">
+                        <span>Dashboard</span>
+                        <ChevronDown className="size-3" />
+                        <span className="text-slate-700 font-medium">
+                            {!tab ? "Vue d'ensemble" :
+                                tab === "market" ? "Place de Marché" :
+                                    tab === "network" ? "Mon Réseau & Monitoring" :
+                                        tab === "tenders" ? "Appels d'Offres" :
+                                            tab === "requests" ? "Demandes Reçues" :
+                                                tab === "profile" ? "Mon Espace Business" : "Vue d'ensemble"}
+                        </span>
+                    </div>
                     <span className={cn(
-                        "text-[8px] font-black px-2 py-0.5 rounded uppercase",
-                        calculateCompanyScore(profile) >= 80 ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"
+                        "text-[9px] font-medium px-2 py-0.5 rounded-md uppercase tracking-wide",
+                        calculateCompanyScore(profile) >= 80
+                            ? "bg-[#e8f4ed] text-[#2c5f42] border border-[#c4dece]"
+                            : "bg-slate-100 text-slate-400 border border-border"
                     )}>
-                        {calculateCompanyScore(profile) >= 80 ? "ENTREPRISE VÉRIFIÉE" : "PROFIL BUSINESS"}
+                        {calculateCompanyScore(profile) >= 80 ? "Vérifié" : "Profil Business"}
                     </span>
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-border shadow-[4px_12px_40px_-12px_rgba(0,0,0,0.04)]">
-                <div className="flex items-center gap-2 mb-3 text-blue-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-[2px]">VOTRE ACTIVITÉ</span>
+            {/* Overview — only when no tab selected */}
+            {!tab && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-5">
+                    <CompanyOverview
+                        suppliers={suppliers}
+                        totalOffers={marketOffers.length}
+                        totalTenders={tenders.length}
+                        averageNdvi={averageNdvi}
+                        totalMonitoredArea={totalMonitoredArea}
+                        marketChartData={marketChartData}
+                        companyName={profile.companyName}
+                    />
+                    <ConfidenceScoreCard
+                        score={calculateCompanyScore(profile)}
+                        role="COMPANY"
+                    />
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Bienvenue, {profile.companyName}</h1>
-                <p className="text-slate-500 mt-2 font-medium max-w-3xl leading-relaxed">
-                    Pilotez vos <strong className="text-slate-700 font-bold underline decoration-blue-200/50">approvisionnements stratégiques</strong> et gérez vos relations avec les producteurs locaux. Analysez vos performances d&apos;achat et trouvez les meilleures opportunités du <strong className="text-slate-700 font-bold underline decoration-blue-200/50">marché agricole</strong>.
-                </p>
-            </div>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
-                        <span>Dashboard</span>
-                        <ChevronDown className="size-3" />
-                        <span className="text-slate-900 font-semibold">Vue d'ensemble</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                </div>
-            </div>
+            )}
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat, i) => (
-                    <Card key={i} className="@container/card bg-white shadow-sm border-border">
-                        <CardHeader>
-                            <div className="flex items-center justify-between mb-2">
-                                <CardDescription className="text-[13px] font-medium text-slate-500">{stat.title}</CardDescription>
-                                <div className={cn("p-1.5 rounded-lg", stat.iconClass)}>
-                                    <stat.icon className="size-3.5" />
-                                </div>
-                            </div>
-                            <CardTitle className="text-2xl font-bold tabular-nums text-slate-900">{stat.value}</CardTitle>
-                        </CardHeader>
-                        <CardFooter className="flex-col items-start gap-1 pb-4">
-                            <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                                {stat.desc}
-                            </div>
-                        </CardFooter>
-                    </Card>
-                ))}
-
-                <MarketBarChart data={marketChartData} totalOffers={marketOffers.length} />
-
-                <ConfidenceScoreCard
-                    score={calculateCompanyScore(profile)}
-                    role="COMPANY"
-                    className="md:col-span-2 lg:col-span-1 shadow-none border-border rounded-xl"
+            {/* Tab content */}
+            <div className={cn("transition-all duration-500", !tab ? "hidden" : "opacity-100")}>
+                <CompanyDashboardTabs
+                    companyProfile={profile}
+                    initialSuppliers={suppliers}
+                    initialMarketOffers={marketOffers as any}
+                    initialRequests={requests}
+                    initialTenders={tenders as any}
+                    initialFarmers={allFarmers}
+                    userImage={session.user.image}
                 />
             </div>
-
-            <CompanyDashboardClient
-                companyProfile={profile}
-                initialSuppliers={suppliers}
-                initialMarketOffers={marketOffers as any}
-                initialRequests={requests}
-                userImage={session.user.image}
-            />
         </main>
     );
 }

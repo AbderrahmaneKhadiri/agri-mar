@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap } from "lucide-react";
+import { Search, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap, Plus, ShoppingBag, Sprout, Users, Trash2, UserMinus, Eye, Pencil, Trash } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,18 +14,47 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
+import Image from "next/image";
+import { BidTenderModal } from "@/components/dashboard/farmer/bid-tender-modal";
+import { HarvestPlanning } from "@/components/dashboard/farmer/harvest-planning";
+import { ExpenseTracker } from "@/components/dashboard/farmer/expense-tracker";
+import { NdviChart } from "@/components/dashboard/ndvi-chart";
+import { WeatherCard } from "@/components/dashboard/weather-card";
+import { SoilCard } from "@/components/dashboard/soil-card";
+import { TenderSelectDTO, TenderBidSelectDTO } from "@/data-access/tenders.dal";
+import { HarvestPlanSelectDTO } from "@/data-access/harvests.dal";
 import { IncomingRequestDTO, PartnerDTO } from "@/data-access/connections.dal";
 import { ProductSelectDTO } from "@/data-access/products.dal";
 import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { calculateFarmerScore } from "@/lib/utils/profile-score";
+import { DirectProposalModal } from "@/components/dashboard/farmer/direct-proposal-modal";
+import { PartnerProfileModal } from "@/components/dashboard/farmer/partner-profile-modal";
+import { resignConnectionAction } from "@/actions/networking.actions";
+import { toast } from "sonner";
+import { AddProductModal } from "@/components/dashboard/farmer/add-product-modal";
+import { EditProductModal } from "@/components/dashboard/farmer/edit-product-modal";
+import { syncCatalogWithHarvestsAction, deleteProductAction } from "@/actions/products.actions";
+import { deleteBidAction } from "@/actions/tenders.actions";
+import { BidDetailsModal } from "@/components/dashboard/farmer/bid-details-modal";
+import { RefreshCw } from "lucide-react";
 
 interface FarmerDashboardTabsProps {
     profile: any;
     initialRequests: IncomingRequestDTO[];
     initialPartners: PartnerDTO[];
     initialProducts: ProductSelectDTO[];
+    initialOpenTenders: (TenderSelectDTO & { company: any })[];
+    initialFarmerBids: (TenderBidSelectDTO & { tender: any })[];
+    initialFarmerQuotes: any[];
+    initialHarvestPlans: HarvestPlanSelectDTO[];
+    initialExpenses: any[];
     userImage?: string | null;
+    ndviData?: any[];
+    currentWeather?: any;
+    weatherForecast?: any;
+    soilData?: any;
+    isSyncing?: boolean;
 }
 
 export function FarmerDashboardTabs({
@@ -32,10 +62,63 @@ export function FarmerDashboardTabs({
     initialRequests,
     initialPartners,
     initialProducts,
-    userImage
+    initialOpenTenders,
+    initialFarmerBids,
+    initialFarmerQuotes = [],
+    initialHarvestPlans,
+    initialExpenses,
+    userImage,
+    ndviData = [],
+    currentWeather = null,
+    weatherForecast = null,
+    soilData = null,
+    isSyncing = false
 }: FarmerDashboardTabsProps) {
-    const [activeTab, setActiveTab] = useState("requests");
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const tabParam = searchParams.get("tab") || "requests";
+
+    const [activeTab, setActiveTab] = useState(tabParam);
     const [searchQuery, setSearchQuery] = useState("");
+    const [products, setProducts] = useState(initialProducts);
+
+    // Sync state with props when server data changes
+    useEffect(() => {
+        setProducts(initialProducts);
+    }, [initialProducts]);
+
+    // Sync state with URL param
+    useEffect(() => {
+        if (tabParam && tabParam !== activeTab) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam, activeTab]);
+
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        router.push(`/dashboard/farmer?tab=${value}`, { scroll: false });
+    };
+
+    const handleDeleteBid = async (bidId: string) => {
+        if (!confirm("Êtes-vous sûr de vouloir supprimer cette proposition ?")) return;
+
+        try {
+            const result = await deleteBidAction(bidId);
+            if (result.success) {
+                toast.success("Proposition supprimée avec succès");
+                router.refresh();
+            } else {
+                toast.error(result.error || "Erreur lors de la suppression");
+            }
+        } catch (error) {
+            toast.error("Erreur réseau");
+        }
+    };
+
+    const handleViewBidDetails = (bid: any) => {
+        setSelectedBidForDetails(bid);
+        setIsBidDetailsModalOpen(true);
+    };
 
     const filteredRequests = initialRequests.filter(req =>
         req.senderName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -45,48 +128,124 @@ export function FarmerDashboardTabs({
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredProducts = initialProducts.filter(p =>
+    const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const filteredOpenTenders = initialOpenTenders.filter(t =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredBids = [
+        ...initialFarmerBids.map(b => ({
+            id: b.id,
+            title: b.tender.title,
+            companyName: b.tender.company?.companyName,
+            price: b.proposedPrice,
+            quantity: b.proposedQuantity,
+            unit: b.tender.unit,
+            status: b.status,
+            message: b.message,
+            createdAt: b.createdAt,
+            type: "BID" as const
+        })),
+        ...initialFarmerQuotes.map(q => ({
+            id: q.id,
+            title: q.productName,
+            companyName: q.connection?.company?.companyName,
+            price: q.unitPrice,
+            quantity: q.quantity,
+            unit: "u", // Default unit for quotes if not specified
+            status: q.status,
+            message: q.notes,
+            createdAt: q.createdAt,
+            type: "QUOTE" as const
+        }))
+    ].filter(p =>
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Product Detail Modal State
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
+    // Bidding State
+    const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+    const [selectedTender, setSelectedTender] = useState<any>(null);
+
+    // Direct Proposal State
+    const [isDirectProposalModalOpen, setIsDirectProposalModalOpen] = useState(false);
+
+    // Catalog State
+    const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+    const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+    const [selectedEditProduct, setSelectedEditProduct] = useState<ProductSelectDTO | null>(null);
+
+    const [selectedBidForDetails, setSelectedBidForDetails] = useState<any | null>(null);
+    const [isBidDetailsModalOpen, setIsBidDetailsModalOpen] = useState(false);
+
+    const handleEditProduct = (product: ProductSelectDTO, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedEditProduct(product);
+        setIsEditProductModalOpen(true);
+    };
+
+    // Partner Profile Modal State
+    const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+    const [selectedPartner, setSelectedPartner] = useState<PartnerDTO | null>(null);
+
+    const handleViewPartner = (partner: PartnerDTO) => {
+        setSelectedPartner(partner);
+        setIsPartnerModalOpen(true);
+    };
+
     const handleViewProductDetail = (product: any) => {
-        setSelectedProduct(product);
+        // Inject the current farmer's profile data so the modal shows real info
+        const name = profile?.farmName || profile?.fullName || profile?.name || "Producteur";
+        const enriched = {
+            ...product,
+            farmer: {
+                id: profile?.id,
+                fullName: name,
+                avatarUrl: userImage || profile?.avatarUrl,
+                region: profile?.region,
+                city: profile?.city,
+                iceNumber: profile?.iceNumber,
+                parcels: profile?.parcels || [],
+            },
+        };
+        setSelectedProduct(enriched);
         setIsProductModalOpen(true);
+    };
+
+    const handleOpenBidModal = (tender: any) => {
+        setSelectedTender(tender);
+        setIsBidModalOpen(true);
+    };
+
+    const handleDeleteProduct = async (productId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
+            const result = await deleteProductAction(productId);
+            if (result.success) {
+                toast.success("Produit supprimé avec succès");
+                // Refresh products list
+                setProducts(products.filter(p => p.id !== productId));
+            } else {
+                toast.error(result.error || "Erreur lors de la suppression");
+            }
+        }
     };
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-border pb-0 mt-2">
-                <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchQuery(""); }} className="w-auto">
+            <div className="hidden items-center justify-between border-b border-border pb-0 mt-2">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-auto">
                     <TabsList variant="line" className="bg-transparent gap-8 h-auto p-0 border-b-0">
-                        <TabsTrigger
-                            value="requests"
-                            className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none flex items-center gap-2 transition-all border-none data-[state=active]:text-slate-900"
-                        >
-                            Dernières Demandes <Badge className="bg-slate-100 text-slate-600 rounded-full text-[10px] px-1.5 py-0 font-bold border-none">{initialRequests.length}</Badge>
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="partners"
-                            className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none transition-all border-none data-[state=active]:text-slate-900"
-                        >
-                            Partenaires Actifs
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="products"
-                            className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none transition-all border-none data-[state=active]:text-slate-900"
-                        >
-                            Mon Catalogue
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="profile"
-                            className="text-[13px] font-semibold text-slate-500 p-0 pb-4 rounded-none bg-transparent shadow-none transition-all border-none data-[state=active]:text-slate-900"
-                        >
-                            Mon Profil
-                        </TabsTrigger>
+                        {/* Tab triggers are now hidden as sidebar handles this, 
+                            but we keep the Tabs component for switching logic */}
                     </TabsList>
                 </Tabs>
 
@@ -104,165 +263,440 @@ export function FarmerDashboardTabs({
             </div>
 
             <Tabs value={activeTab} className="mt-2">
-                <TabsContent value="requests" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
-                    <Table>
-                        <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-border hover:bg-transparent h-10">
-                                <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
-                                </TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Entreprise</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Date</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight text-right pr-4">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredRequests.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-slate-500 text-[12px] font-medium">Aucune demande trouvée.</TableCell>
-                                </TableRow>
-                            ) : filteredRequests.map((req) => (
-                                <TableRow key={req.id} className="border-slate-50 hover:bg-slate-50/20 h-10 group">
-                                    <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
-                                    </TableCell>
-                                    <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
-                                        {req.senderName}
-                                    </TableCell>
-                                    <TableCell className="py-2">
-                                        <div className={cn(
-                                            "flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full w-fit",
-                                            req.status === "PENDING" ? "bg-blue-50 text-blue-600" :
-                                                req.status === "ACCEPTED" ? "bg-emerald-50 text-emerald-600" :
-                                                    "bg-slate-50 text-slate-400"
-                                        )}>
-                                            <Clock className="size-2.5" />
-                                            {req.status === "PENDING" ? "En attente" : req.status === "ACCEPTED" ? "Autorisé" : "Refusé"}
+                <TabsContent value="requests" className="m-0">
+                    {filteredRequests.length === 0 ? (
+                        <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-48 flex flex-col items-center justify-center bg-[#f8fdf9]/30">
+                            <Clock className="size-8 text-slate-200 mb-2" />
+                            <p className="text-slate-400 text-[13px] font-medium">Aucune demande reçue pour le moment.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredRequests.map((req) => (
+                                <Card key={req.id} className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl">
+                                    <div className="h-1 bg-[#f0f8f4]" />
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className={cn(
+                                                "flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider",
+                                                req.status === "PENDING" ? "bg-[#f0f8f4] text-[#4a8c5c]" :
+                                                    req.status === "ACCEPTED" ? "bg-[#f0f8f4] text-[#2c5f42]" :
+                                                        "bg-red-50 text-red-600"
+                                            )}>
+                                                <Clock className="size-3" />
+                                                {req.status === "PENDING" ? "En attente" : req.status === "ACCEPTED" ? "Accepté" : "Refusé"}
+                                            </div>
+                                            <span className="text-[11px] font-bold text-slate-300 tabular-nums">
+                                                {format(new Date(req.sentAt), "d MMM yyyy", { locale: fr })}
+                                            </span>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="text-[12px] font-semibold text-slate-500 py-2">
-                                        {format(new Date(req.sentAt), "d MMM yyyy", { locale: fr })}
-                                    </TableCell>
-                                    <TableCell className="pr-4 py-2 text-right">
-                                        <Button asChild variant="ghost" size="sm" className="h-7 text-slate-400 hover:text-slate-900">
-                                            <Link href="/dashboard/farmer/requests">
-                                                Détails <ArrowUpRightIcon className="size-3 ml-1" />
+
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <Avatar className="size-12 rounded-xl ring-4 ring-[#f8fdf9] shadow-sm transition-transform group-hover:scale-105">
+                                                <AvatarImage src={req.senderLogo || ""} className="object-cover" />
+                                                <AvatarFallback className="bg-[#f0f8f4] text-[#4a8c5c] text-base font-black uppercase">
+                                                    {req.senderName.substring(0, 2)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-[14px] text-slate-900 truncate tracking-tight group-hover:text-[#2c5f42] transition-colors">
+                                                    {req.senderName}
+                                                </h4>
+                                                <p className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-widest mt-0.5">
+                                                    Partenariat Direct
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <Button asChild className="w-full h-10 rounded-xl bg-[#f0f8f4] hover:bg-[#2c5f42] hover:text-white text-[#2c5f42] font-bold border-none transition-all duration-300 group/btn shadow-none">
+                                            <Link href="/dashboard/farmer/requests" className="flex items-center justify-center gap-2">
+                                                <span className="text-[11px] uppercase tracking-widest">Détails de la demande</span>
+                                                <ArrowUpRightIcon className="size-3 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                                             </Link>
                                         </Button>
-                                    </TableCell>
-                                </TableRow>
+                                    </CardContent>
+                                </Card>
                             ))}
-                        </TableBody>
-                    </Table>
+                        </div>
+                    )}
                 </TabsContent>
 
-                <TabsContent value="partners" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
-                    <Table>
-                        <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-border hover:bg-transparent h-10">
-                                <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
-                                </TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Partenaire</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Secteur</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Membre depuis</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight text-right pr-4">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredPartners.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-slate-500 text-[12px] font-medium">Aucun partenaire actif.</TableCell>
-                                </TableRow>
-                            ) : filteredPartners.map((partner) => (
-                                <TableRow key={partner.id} className="border-slate-50 hover:bg-slate-50/20 h-10 group">
-                                    <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
-                                    </TableCell>
-                                    <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
-                                        {partner.name}
-                                    </TableCell>
-                                    <TableCell className="text-[12px] text-slate-500 font-medium py-2">
-                                        {partner.industry || "N/A"}
-                                    </TableCell>
-                                    <TableCell className="text-[12px] font-semibold text-slate-500 py-2">
-                                        {format(new Date(partner.since), "MMM yyyy", { locale: fr })}
-                                    </TableCell>
-                                    <TableCell className="pr-4 py-2 text-right">
-                                        <Button asChild variant="ghost" size="sm" className="h-7 text-slate-400 hover:text-slate-900">
-                                            <Link href="/dashboard/farmer/partners">
-                                                Voir Profil <ArrowUpRightIcon className="size-3 ml-1" />
-                                            </Link>
+                <TabsContent value="partners" className="m-0">
+                    {filteredPartners.length === 0 ? (
+                        <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-48 flex flex-col items-center justify-center bg-[#f8fdf9]/40">
+                            <Users className="size-8 text-[#4a8c5c]/20 mb-2" />
+                            <p className="text-[#4a8c5c]/50 text-[13px] font-medium">Aucun partenaire actif pour le moment.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredPartners.map((partner) => (
+                                <Card key={partner.id} className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white overflow-hidden rounded-2xl">
+                                    <div className="h-1.5 bg-gradient-to-r from-[#d4e9dc] to-[#a8d5be]" />
+                                    <CardContent className="p-6 relative">
+                                        <div className="flex items-start gap-4 mb-6">
+                                            <Avatar className="size-14 rounded-xl ring-4 ring-[#f8fdf9] shadow-sm transition-transform group-hover:scale-105">
+                                                <AvatarImage src={partner.avatarUrl || ""} className="object-cover" />
+                                                <AvatarFallback className="bg-[#f0f8f4] text-[#4a8c5c] text-lg font-black uppercase">
+                                                    {partner.name.substring(0, 2)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-[15px] text-slate-900 truncate tracking-tight group-hover:text-[#2c5f42] transition-colors">
+                                                    {partner.name}
+                                                </h4>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <Badge variant="secondary" className="bg-[#f0f8f4] text-[#4a8c5c] border-none text-[9px] font-bold uppercase tracking-wider py-0 px-2 rounded-md">
+                                                        {partner.industry || "Secteur non spécifié"}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 mb-6">
+                                            <div className="flex items-center gap-2.5 text-slate-500">
+                                                <div className="size-7 rounded-lg bg-[#f0f8f4] flex items-center justify-center text-[#4a8c5c] border border-[#d4e9dc]/50">
+                                                    <MapPin className="size-3.5" />
+                                                </div>
+                                                <span className="text-[12px] font-medium truncate">{partner.location || "Localisation non spécifiée"}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2.5 text-slate-500">
+                                                <div className="size-7 rounded-lg bg-[#f0f8f4] flex items-center justify-center text-[#4a8c5c] border border-[#d4e9dc]/50">
+                                                    <Clock className="size-3.5" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-[#4a8c5c]/50 uppercase tracking-widest leading-none mb-0.5">Partenaire depuis</span>
+                                                    <span className="text-[12px] font-semibold text-slate-700">
+                                                        {format(new Date(partner.since), "MMM yyyy", { locale: fr })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className="w-full h-10 rounded-xl bg-[#f0f8f4] hover:bg-[#2c5f42] hover:text-white text-[#2c5f42] font-bold border-none transition-all duration-300 group/btn shadow-none"
+                                            onClick={() => handleViewPartner(partner)}
+                                        >
+                                            <span className="text-[11px] uppercase tracking-widest">Voir le Profil</span>
+                                            <ArrowUpRightIcon className="size-3 ml-2 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                                         </Button>
-                                    </TableCell>
-                                </TableRow>
+                                    </CardContent>
+                                </Card>
                             ))}
-                        </TableBody>
-                    </Table>
+                        </div>
+                    )}
                 </TabsContent>
 
-                <TabsContent value="products" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0">
-                    <Table>
-                        <TableHeader className="bg-slate-50/50 hover:bg-transparent">
-                            <TableRow className="border-border hover:bg-transparent h-10">
-                                <TableHead className="w-[40px] px-4">
-                                    <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" />
-                                </TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-0">Produit</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Prix Moyen</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Stock</TableHead>
-                                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight text-right pr-4">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredProducts.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-slate-500 text-[12px] font-medium">Aucun produit au catalogue.</TableCell>
-                                </TableRow>
-                            ) : filteredProducts.map((product) => (
-                                <TableRow
+                <TabsContent value="products" className="m-0 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-border">
+                        <div>
+                            <h3 className="text-[15px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                <ShoppingBag className="size-4 text-[#2c5f42]" />
+                                Catalogue de Vente
+                            </h3>
+                            <p className="text-[11px] font-medium text-slate-400">Gérez vos produits disponibles sur la place de marché.</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 rounded-lg border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider px-3 hover:bg-[#2c5f42] hover:text-white transition-all group"
+                            onClick={() => setIsAddProductModalOpen(true)}
+                        >
+                            <Plus className="size-3 mr-1.5 group-hover:rotate-90 transition-transform" />
+                            Ajouter un Produit
+                        </Button>
+                    </div>
+
+                    {filteredProducts.length === 0 ? (
+                        <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-48 flex flex-col items-center justify-center bg-[#f8fdf9]/30">
+                            <ShoppingBag className="size-8 text-slate-200 mb-2" />
+                            <p className="text-slate-400 text-[13px] font-medium">Aucun produit au catalogue pour le moment.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {filteredProducts.map((product) => (
+                                <Card
                                     key={product.id}
-                                    className="border-slate-50 hover:bg-slate-50/20 h-10 group cursor-pointer"
+                                    className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl cursor-pointer"
                                     onClick={() => handleViewProductDetail(product)}
                                 >
-                                    <TableCell className="px-4 py-2">
-                                        <Checkbox className="translate-y-[2px] border-border data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 group-hover:border-border transition-colors" />
-                                    </TableCell>
-                                    <TableCell className="font-semibold text-[13px] text-slate-900 pl-0 py-2">
-                                        {product.name}
-                                    </TableCell>
-                                    <TableCell className="text-[12px] font-bold text-slate-900 py-2">
-                                        {product.price.toString()} <span className="text-[10px] text-slate-400 font-medium">MAD/{product.unit}</span>
-                                    </TableCell>
-                                    <TableCell className="text-[12px] font-semibold text-slate-900 py-2">
-                                        {product.stockQuantity.toString()} {product.unit}
-                                    </TableCell>
-                                    <TableCell className="pr-4 py-2 text-right">
-                                        <Button asChild variant="ghost" size="sm" className="h-7 text-slate-400 hover:text-slate-900" onClick={(e) => e.stopPropagation()}>
-                                            <Link href="/dashboard/farmer/products">
-                                                Modifier <ArrowUpRightIcon className="size-3 ml-1" />
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
+                                    <div className="aspect-video bg-[#f0f8f4] relative overflow-hidden flex items-center justify-center border-b border-[#d4e9dc]/50">
+                                        {product.images && product.images.length > 0 ? (
+                                            <Image
+                                                src={product.images[0]}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                        ) : (
+                                            <Sprout className="size-10 text-[#4a8c5c]/20 group-hover:scale-110 group-hover:text-[#2c5f42]/40 transition-all duration-500" />
+                                        )}
+                                        <div className="absolute top-2 right-2">
+                                            <Badge className="bg-[#2c5f42] text-white border-none text-[9px] font-black uppercase tracking-widest py-0.5 shadow-md">
+                                                En Vente
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <CardContent className="p-4">
+                                        <div className="mb-4">
+                                            <h4 className="font-bold text-[14px] text-slate-900 truncate tracking-tight group-hover:text-[#2c5f42] transition-colors">{product.name}</h4>
+                                            <p className="text-[10px] font-bold text-[#4a8c5c] uppercase tracking-widest mt-0.5">{product.category || "Agriculture Directe"}</p>
+                                        </div>
+
+                                        <div className="flex items-end justify-between mb-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">Prix Moyen</span>
+                                                <span className="text-[16px] font-black text-[#2c5f42] tabular-nums">
+                                                    {product.price.toString()}
+                                                    <span className="text-[10px] text-[#4a8c5c] font-medium ml-1">MAD/{product.unit}</span>
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1 text-right">Stock</span>
+                                                <span className="text-[13px] font-bold text-slate-700 tabular-nums">
+                                                    {product.stockQuantity.toString()}
+                                                    <span className="text-[10px] text-slate-400 font-medium ml-1">{product.unit}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                className="flex-1 h-9 rounded-xl bg-[#f0f8f4] hover:bg-[#2c5f42] hover:text-white text-[#2c5f42] font-bold border-none transition-all duration-300"
+                                                onClick={(e) => handleEditProduct(product, e)}
+                                            >
+                                                <span className="text-[10px] uppercase tracking-widest">Modifier</span>
+                                            </Button>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="size-9 rounded-xl bg-[#fff0f0] text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300"
+                                                onClick={(e) => handleDeleteProduct(product.id, e)}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="size-9 rounded-xl bg-[#f0f8f4] text-[#4a8c5c] hover:bg-[#2c5f42] hover:text-white transition-all duration-300"
+                                                onClick={() => handleViewProductDetail(product)}
+                                            >
+                                                <ArrowUpRightIcon className="size-3.5" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))}
-                        </TableBody>
-                    </Table>
+                        </div>
+                    )}
                 </TabsContent>
+
+                <TabsContent value="tenders" className="m-0 space-y-8">
+                    {/* Market Opportunities */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#d4e9dc]">
+                            <div>
+                                <h3 className="text-[15px] font-bold text-[#2c5f42] tracking-tight flex items-center gap-2">
+                                    <Globe className="size-4 text-[#4a8c5c]" />
+                                    Opportunités de Marché
+                                </h3>
+                                <p className="text-[11px] font-medium text-[#4a8c5c]/70">Appels d&apos;offres ouverts des entreprises partenaires.</p>
+                            </div>
+                        </div>
+
+                        {filteredOpenTenders.length === 0 ? (
+                            <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-32 flex items-center justify-center bg-[#f8fdf9]/40">
+                                <p className="text-[#4a8c5c]/50 text-[12px] italic">Aucune opportunité ouverte pour le moment.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {filteredOpenTenders.map((t) => (
+                                    <Card key={t.id} className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl">
+                                        <div className="h-1.5 bg-[#f0f8f4]" />
+                                        <CardContent className="p-6">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <Avatar className="size-12 rounded-xl border border-[#f0f8f4] shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                                    <AvatarImage src={t.company?.logoUrl || ""} className="object-cover" />
+                                                    <AvatarFallback className="bg-[#f0f8f4] text-[#4a8c5c] text-base font-bold">
+                                                        {t.company?.companyName?.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-[14px] text-slate-900 truncate tracking-tight group-hover:text-[#2c5f42] transition-colors">{t.title}</h4>
+                                                    <p className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-widest mt-0.5">{t.company?.companyName}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mb-6">
+                                                <div className="p-3 rounded-xl bg-[#f0f8f4]/30 border border-[#d4e9dc]/20">
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Besoin</span>
+                                                    <span className="text-[13px] font-black text-slate-900">{t.quantity} <span className="text-[10px] text-slate-500 font-medium">{t.unit}</span></span>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-[#f0f8f4] border border-[#d4e9dc]/50">
+                                                    <span className="text-[9px] font-bold text-[#4a8c5c] uppercase tracking-widest block mb-1">Prix Visé</span>
+                                                    <span className="text-[13px] font-black text-[#2c5f42]">{t.targetPrice ? `${t.targetPrice} MAD/u` : "Offre"}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-1.5 text-slate-400">
+                                                    <Clock className="size-3.5" />
+                                                    <span className="text-[11px] font-semibold">Deadline: {format(new Date(t.deadline), "d MMM yyyy", { locale: fr })}</span>
+                                                </div>
+                                                <Badge variant="outline" className="text-[9px] font-bold bg-[#f0f8f4] text-[#4a8c5c] border-none uppercase py-0.5">OUVERT</Badge>
+                                            </div>
+
+                                            <Button
+                                                onClick={() => handleOpenBidModal(t)}
+                                                className="w-full h-10 rounded-xl bg-[#2c5f42] hover:bg-[#1a3d2a] text-white font-bold text-[11px] uppercase tracking-widest shadow-lg shadow-[#2c5f42]/20 transition-all hover:scale-[1.02]"
+                                            >
+                                                Postuler Maintenant
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* My Proposals */}
+                    <div className="space-y-4 pt-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#d4e9dc]">
+                            <div>
+                                <h3 className="text-[15px] font-bold text-[#2c5f42] tracking-tight flex items-center gap-2">
+                                    <Briefcase className="size-4 text-[#4a8c5c]" />
+                                    Mes Propositions
+                                </h3>
+                                <p className="text-[11px] font-medium text-[#4a8c5c]/70">Suivi de vos réponses aux appels d&apos;offres.</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 rounded-lg border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider px-3 hover:bg-[#2c5f42] hover:text-white transition-all group"
+                                onClick={() => setIsDirectProposalModalOpen(true)}
+                            >
+                                <Plus className="size-3 mr-1.5 group-hover:rotate-90 transition-transform" />
+                                Nouvelle Proposition
+                            </Button>
+                        </div>
+
+                        {filteredBids.length === 0 ? (
+                            <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-32 flex items-center justify-center bg-[#f8fdf9]/30">
+                                <p className="text-slate-400 text-[12px] italic">Vous n&apos;avez pas encore soumis de proposition.</p>
+                            </div>
+                        ) : (
+                            <div className="border border-[#d4e9dc]/50 rounded-2xl overflow-hidden bg-white shadow-sm">
+                                <Table>
+                                    <TableHeader className="bg-[#f0f8f4]/50">
+                                        <TableRow className="hover:bg-transparent border-[#d4e9dc]/50">
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Statut</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Produit</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Entreprise</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Mon Prix</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Ma Quantité</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10">Date</TableHead>
+                                            <TableHead className="text-[10px] font-black text-[#2c5f42] uppercase tracking-widest h-10 text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredBids.map((b) => (
+                                            <TableRow key={b.id} className="border-[#d4e9dc]/30 hover:bg-[#f0f8f4]/30 transition-colors group">
+                                                <TableCell className="py-3">
+                                                    <Badge variant="outline" className={cn(
+                                                        "text-[9px] font-black border-none px-2 rounded-full uppercase tracking-tighter",
+                                                        b.status === "PENDING" ? "bg-[#f0f8f4] text-[#4a8c5c]" :
+                                                            b.status === "ACCEPTED" ? "bg-[#2c5f42] text-white" :
+                                                                "bg-red-50 text-red-600"
+                                                    )}>
+                                                        {b.status === "PENDING" ? "EN ATTENTE" : b.status === "ACCEPTED" ? "ACCEPTÉ" : "REFUSÉ"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <span className="font-bold text-[13px] text-slate-800 group-hover:text-[#2c5f42] transition-colors">{b.title}</span>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <span className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-tight">{b.companyName}</span>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <span className="text-[13px] font-black text-[#2c5f42] tabular-nums">
+                                                        {b.price} <span className="text-[9px] font-medium opacity-70">MAD/u</span>
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <span className="text-[13px] font-black text-slate-700 tabular-nums">
+                                                        {b.quantity} <span className="text-[9px] font-medium opacity-60 uppercase">{b.unit}</span>
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                        {format(new Date(b.createdAt), "d MMM yyyy", { locale: fr })}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-3 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8 rounded-lg bg-[#f0f8f4] text-[#4a8c5c] hover:bg-[#2c5f42] hover:text-white"
+                                                            onClick={() => handleViewBidDetails(b)}
+                                                        >
+                                                            <Eye className="size-3.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
+                                                            onClick={() => handleDeleteBid(b.id)}
+                                                        >
+                                                            <Trash2 className="size-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="planning" className="m-0">
+                    <HarvestPlanning initialPlans={initialHarvestPlans} />
+                </TabsContent>
+
+                <TabsContent value="finances" className="m-0">
+                    <ExpenseTracker initialExpenses={initialExpenses} harvestPlans={initialHarvestPlans} />
+                </TabsContent>
+                <TabsContent value="land" className="m-0 space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <NdviChart data={ndviData} isSyncing={isSyncing} />
+                        </div>
+                        <div className="flex flex-col gap-6">
+                            <WeatherCard
+                                current={currentWeather}
+                                forecast={weatherForecast}
+                                locationName={profile.farmLocation || "Ma Ferme"}
+                                isSyncing={isSyncing}
+                            />
+                            <SoilCard data={soilData} isSyncing={isSyncing} />
+                        </div>
+                    </div>
+                </TabsContent>
+
 
                 <TabsContent value="profile" className="m-0 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Farm Info */}
                         <div className="md:col-span-2 space-y-6">
                             <Card className="border-border shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
-                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                <CardHeader className="bg-[#f8fdf9] border-b border-[#e0ede5] p-6">
+                                    <div className="flex items-center gap-2 text-[#4a8c5c] mb-1">
                                         <LandPlot className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Informations Exploitation</span>
                                     </div>
-                                    <CardTitle className="text-xl font-bold text-slate-900">{profile.farmName}</CardTitle>
-                                    <CardDescription className="text-sm font-medium text-slate-500">
+                                    <CardTitle className="text-xl font-bold text-[#2c5f42]">{profile.farmName}</CardTitle>
+                                    <CardDescription className="text-sm font-medium text-[#4a8c5c]/70">
                                         {profile.farmLocation}, {profile.city}
                                     </CardDescription>
                                 </CardHeader>
@@ -299,7 +733,7 @@ export function FarmerDashboardTabs({
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Méthodes de Culture</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                                                         {Array.isArray(profile.farmingMethods) && profile.farmingMethods.length > 0 ? profile.farmingMethods.map((m: string) => (
-                                                            <Badge key={m} variant="secondary" className="bg-slate-100 text-slate-700 border-none font-bold text-[10px] uppercase">{m}</Badge>
+                                                            <Badge key={m} variant="secondary" className="bg-[#f0f8f4] text-[#4a8c5c] border-none font-bold text-[10px] uppercase">{m}</Badge>
                                                         )) : <span className="text-[13px] font-medium text-slate-400 italic">Non spécifié</span>}
                                                     </div>
                                                 </div>
@@ -323,9 +757,9 @@ export function FarmerDashboardTabs({
                                                 <div>
                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Certifications</div>
                                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                        {profile.onssaCert && <Badge className="bg-slate-900 text-white hover:bg-slate-800 border-none font-bold text-[10px] uppercase">ONSSA: {profile.onssaCert}</Badge>}
+                                                        {profile.onssaCert && <Badge className="bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 border-none font-bold text-[10px] uppercase">ONSSA: {profile.onssaCert}</Badge>}
                                                         {Array.isArray(profile.certifications) && profile.certifications.length > 0 ? profile.certifications.map((c: string) => (
-                                                            <Badge key={c} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none font-bold text-[10px] uppercase">{c}</Badge>
+                                                            <Badge key={c} variant="secondary" className="bg-[#f0f8f4] text-[#4a8c5c] hover:bg-[#f0f8f4] border-none font-bold text-[10px] uppercase">{c}</Badge>
                                                         )) : !profile.onssaCert && <span className="text-[13px] font-medium text-slate-500 italic">Aucune certification</span>}
                                                     </div>
                                                 </div>
@@ -347,25 +781,25 @@ export function FarmerDashboardTabs({
                             </Card>
 
                             <Card className="border-border shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
-                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                <CardHeader className="bg-[#f8fdf9] border-b border-[#e0ede5] p-6">
+                                    <div className="flex items-center gap-2 text-[#4a8c5c] mb-1">
                                         <Boxes className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Production & Disponibilité</span>
                                     </div>
-                                    <CardTitle className="text-xl font-bold text-slate-900">Capacités de Production</CardTitle>
+                                    <CardTitle className="text-xl font-bold text-[#2c5f42]">Capacités de Production</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-8">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                         <div className="space-y-6">
                                             <div>
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Volume de Production</div>
-                                                <div className="p-4 rounded-xl bg-slate-50 border border-border">
-                                                    <div className="text-[15px] font-semibold text-slate-900">{profile.avgAnnualProduction}</div>
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">Production Annuelle Moyenne</div>
+                                                <div className="p-4 rounded-xl bg-[#f0f8f4]/50 border border-[#c4dece]/50">
+                                                    <div className="text-[15px] font-semibold text-[#2c5f42]">{profile.avgAnnualProduction}</div>
+                                                    <div className="text-[10px] font-bold text-[#4a8c5c]/70 uppercase mt-1">Production Annuelle Moyenne</div>
                                                 </div>
-                                                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-border">
-                                                    <div className="text-[13px] font-bold text-slate-700">{profile.availableProductionVolume}</div>
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">Volume Actuellement Disponible</div>
+                                                <div className="mt-4 p-4 rounded-xl bg-[#f0f8f4]/50 border border-[#c4dece]/50">
+                                                    <div className="text-[13px] font-bold text-[#2c5f42]">{profile.availableProductionVolume}</div>
+                                                    <div className="text-[10px] font-bold text-[#4a8c5c]/70 uppercase mt-1">Volume Actuellement Disponible</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -375,26 +809,26 @@ export function FarmerDashboardTabs({
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Saisonnalité</div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {Array.isArray(profile.seasonAvailability) && profile.seasonAvailability.length > 0 ? profile.seasonAvailability.map((month: string) => (
-                                                        <Badge key={month} variant="secondary" className="bg-slate-100 text-slate-600 font-bold text-[9px] uppercase">{month}</Badge>
+                                                        <Badge key={month} variant="secondary" className="bg-[#f0f8f4] text-[#4a8c5c] font-bold text-[9px] uppercase border-[#c4dece]">{month}</Badge>
                                                     )) : <span className="text-[13px] font-medium text-slate-400 italic">Toute l&apos;année</span>}
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Export</span>
-                                                    <Badge variant={profile.exportCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.exportCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.exportCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase border-none", profile.exportCapacity ? "bg-[#2c5f42] text-white" : "bg-slate-100 text-slate-400")}>
                                                         {profile.exportCapacity ? "CAPABLE" : "NON"}
                                                     </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Logistique</span>
-                                                    <Badge variant={profile.logisticsCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.logisticsCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.logisticsCapacity ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase border-none", profile.logisticsCapacity ? "bg-[#2c5f42] text-white" : "bg-slate-100 text-slate-400")}>
                                                         {profile.logisticsCapacity ? "OUI" : "NON"}
                                                     </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[12px] font-bold text-slate-500 uppercase">Contrat Long Terme</span>
-                                                    <Badge variant={profile.longTermContractAvailable ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase", profile.longTermContractAvailable ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
+                                                    <Badge variant={profile.longTermContractAvailable ? "default" : "secondary"} className={cn("text-[9px] font-bold uppercase border-none", profile.longTermContractAvailable ? "bg-[#2c5f42] text-white" : "bg-slate-100 text-slate-400")}>
                                                         {profile.longTermContractAvailable ? "DISPONIBLE" : "NON"}
                                                     </Badge>
                                                 </div>
@@ -405,12 +839,12 @@ export function FarmerDashboardTabs({
                             </Card>
 
                             <Card className="border-border shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50/50 border-b border-border p-6">
-                                    <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                <CardHeader className="bg-[#f8fdf9] border-b border-[#e0ede5] p-6">
+                                    <div className="flex items-center gap-2 text-[#4a8c5c] mb-1">
                                         <Building2 className="size-4" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Modèle Économique & Logistique</span>
                                     </div>
-                                    <CardTitle className="text-xl font-bold text-slate-900">Capacités Commerciales</CardTitle>
+                                    <CardTitle className="text-xl font-bold text-[#2c5f42]">Capacités Commerciales</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-8">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
@@ -419,15 +853,15 @@ export function FarmerDashboardTabs({
                                                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Modes de Vente</div>
                                                 <div className="space-y-2">
                                                     {Array.isArray(profile.businessModel) && profile.businessModel.includes("Direct Sales") && (
-                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-border">
-                                                            <Store className="size-4 text-slate-500" />
-                                                            <div className="text-[13px] font-bold text-slate-900">Vente Directe (Au Kilo)</div>
+                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#f0f8f4]/50 border border-[#c4dece]/50">
+                                                            <Store className="size-4 text-[#4a8c5c]" />
+                                                            <div className="text-[13px] font-bold text-[#2c5f42]">Vente Directe (Au Kilo)</div>
                                                         </div>
                                                     )}
                                                     {Array.isArray(profile.businessModel) && profile.businessModel.includes("Contracts") && (
-                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-border">
-                                                            <LayoutGrid className="size-4 text-slate-500" />
-                                                            <div className="text-[13px] font-bold text-slate-900">Contrats (Industriel)</div>
+                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#f0f8f4]/50 border border-[#c4dece]/50">
+                                                            <LayoutGrid className="size-4 text-[#4a8c5c]" />
+                                                            <div className="text-[13px] font-bold text-[#2c5f42]">Contrats (Industriel)</div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -440,17 +874,17 @@ export function FarmerDashboardTabs({
                                                 <div className="space-y-3">
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                                                            <Truck className="size-4 text-slate-400" /> Livraison
+                                                            <Truck className="size-4 text-[#4a8c5c]" /> Livraison
                                                         </div>
-                                                        <Badge variant={profile.deliveryCapacity ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.deliveryCapacity ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
+                                                        <Badge variant={profile.deliveryCapacity ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase border-none", profile.deliveryCapacity ? "bg-[#2c5f42] text-white" : "bg-slate-100 text-slate-400")}>
                                                             {profile.deliveryCapacity ? "OUI" : "NON"}
                                                         </Badge>
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                                                            <Droplets className="size-4 text-slate-400" /> Froid
+                                                            <Droplets className="size-4 text-[#4a8c5c]" /> Froid
                                                         </div>
-                                                        <Badge variant={profile.hasColdStorage ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase", profile.hasColdStorage ? "bg-slate-900" : "bg-slate-100 text-slate-400")}>
+                                                        <Badge variant={profile.hasColdStorage ? "default" : "secondary"} className={cn("text-[10px] font-bold uppercase border-none", profile.hasColdStorage ? "bg-[#2c5f42] text-white" : "bg-slate-100 text-slate-400")}>
                                                             {profile.hasColdStorage ? "OUI" : "NON"}
                                                         </Badge>
                                                     </div>
@@ -466,42 +900,42 @@ export function FarmerDashboardTabs({
                         <div className="space-y-6">
                             <Card className="border-border shadow-sm overflow-hidden bg-white">
                                 <CardContent className="p-8 text-center space-y-4">
-                                    <Avatar className="mx-auto w-24 h-24 ring-4 ring-slate-100 shadow-sm">
+                                    <Avatar className="mx-auto w-24 h-24 ring-4 ring-[#f0f8f4] shadow-sm">
                                         <AvatarImage src={profile.avatarUrl || userImage || undefined} className="object-cover" />
-                                        <AvatarFallback className="bg-slate-50 text-slate-300 text-2xl font-black">
+                                        <AvatarFallback className="bg-[#f0f8f4] text-[#4a8c5c] text-2xl font-black">
                                             {profile.fullName?.split(' ').map((n: any) => n[0]).join('').substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="space-y-1">
-                                        <h3 className="text-xl font-bold text-slate-900">{profile.fullName}</h3>
-                                        <p className="text-[12px] font-bold text-slate-500 uppercase tracking-widest">{profile.iceNumber || "Sans ICE"}</p>
+                                        <h3 className="text-xl font-bold text-[#2c5f42]">{profile.fullName}</h3>
+                                        <p className="text-[12px] font-bold text-[#4a8c5c]/60 uppercase tracking-widest">{profile.iceNumber || "Sans ICE"}</p>
                                     </div>
                                     <div className="pt-4 flex flex-wrap justify-center gap-2">
                                         {Array.isArray(profile.cropTypes) && profile.cropTypes.map((crop: string) => (
-                                            <Badge key={crop} className="bg-slate-900 text-white hover:bg-slate-800 border-none font-bold text-[9px] uppercase tracking-tighter">{crop}</Badge>
+                                            <Badge key={crop} className="bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 border-none font-bold text-[9px] uppercase tracking-tighter shadow-sm">{crop}</Badge>
                                         ))}
                                     </div>
                                     <div className="pt-6 space-y-4 text-left border-t border-slate-50">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
+                                            <div className="p-2 rounded-lg bg-[#f0f8f4] text-[#4a8c5c]">
                                                 <Phone className="size-3.5" />
                                             </div>
-                                            <div className="text-[13px] font-bold text-slate-900 tabular-nums">{profile.phone}</div>
+                                            <div className="text-[13px] font-bold text-[#2c5f42] tabular-nums">{profile.phone}</div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
+                                            <div className="p-2 rounded-lg bg-[#f0f8f4] text-[#4a8c5c]">
                                                 <Mail className="size-3.5" />
                                             </div>
-                                            <div className="text-[13px] font-bold text-slate-900 truncate">{profile.businessEmail}</div>
+                                            <div className="text-[13px] font-bold text-[#2c5f42] truncate">{profile.businessEmail}</div>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <div className="border border-border rounded-xl p-5 bg-white border-l-2 border-l-black">
+                            <div className="border border-border rounded-xl p-5 bg-white border-l-2 border-l-[#2c5f42]">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <ShieldCheck className="size-4 text-slate-700" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                                    <ShieldCheck className="size-4 text-[#4a8c5c]" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#4a8c5c]/70">
                                         {calculateFarmerScore(profile) >= 80 ? "Statut Vérifié" : "Score de Confiance"}
                                     </span>
                                 </div>
@@ -511,7 +945,7 @@ export function FarmerDashboardTabs({
                                         : "Complétez votre ICE et vos certifications pour accéder aux contrats industriels."}
                                 </p>
                                 {calculateFarmerScore(profile) < 80 && (
-                                    <Button size="sm" className="w-full text-[13px]">
+                                    <Button size="sm" className="w-full text-[13px] bg-[#2c5f42] hover:bg-[#2c5f42]/90 shadow-lg shadow-[#2c5f42]/20">
                                         Compléter le profil
                                     </Button>
                                 )}
@@ -527,6 +961,42 @@ export function FarmerDashboardTabs({
                 product={selectedProduct}
                 onContactSeller={() => { }} // No action for farmer viewing own product
                 isContacting={false}
+            />
+
+            <BidTenderModal
+                isOpen={isBidModalOpen}
+                onOpenChange={setIsBidModalOpen}
+                tender={selectedTender}
+            />
+
+            <DirectProposalModal
+                isOpen={isDirectProposalModalOpen}
+                onOpenChange={setIsDirectProposalModalOpen}
+                partners={initialPartners}
+                products={initialProducts}
+            />
+
+            <AddProductModal
+                isOpen={isAddProductModalOpen}
+                onOpenChange={setIsAddProductModalOpen}
+            />
+
+            <PartnerProfileModal
+                isOpen={isPartnerModalOpen}
+                onOpenChange={setIsPartnerModalOpen}
+                partner={selectedPartner}
+            />
+
+            <EditProductModal
+                isOpen={isEditProductModalOpen}
+                onOpenChange={setIsEditProductModalOpen}
+                product={selectedEditProduct}
+            />
+
+            <BidDetailsModal
+                isOpen={isBidDetailsModalOpen}
+                onOpenChange={setIsBidDetailsModalOpen}
+                bid={selectedBidForDetails}
             />
         </div>
     );

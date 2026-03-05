@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/persistence/db";
-import { messages, connections, quotes, notifications } from "@/persistence/schema";
+import { messages, connections, quotes, notifications, user } from "@/persistence/schema";
 import { and, eq, or, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { pusherServer } from "@/lib/pusher";
@@ -104,24 +104,30 @@ export async function getConversationAction(connectionId: string) {
         if (!session?.user) throw new Error("Non authentifié");
 
         const [history, quoteHistory] = await Promise.all([
-            db.query.messages.findMany({
-                where: eq(messages.connectionId, connectionId),
-                orderBy: [asc(messages.createdAt)],
-                with: {
-                    sender: {
-                        columns: {
-                            id: true,
-                            name: true,
-                            image: true,
-                            role: true,
-                        }
-                    }
+            db.select({
+                id: messages.id,
+                connectionId: messages.connectionId,
+                senderUserId: messages.senderUserId,
+                content: messages.content,
+                type: messages.type,
+                metadata: messages.metadata,
+                createdAt: messages.createdAt,
+                sender: {
+                    id: user.id,
+                    name: user.name,
+                    image: user.image,
+                    role: user.role,
                 }
-            }),
-            db.query.quotes.findMany({
-                where: eq(quotes.connectionId, connectionId),
-                orderBy: [asc(quotes.createdAt)]
             })
+                .from(messages)
+                .leftJoin(user, eq(messages.senderUserId, user.id))
+                .where(eq(messages.connectionId, connectionId))
+                .orderBy(asc(messages.createdAt)),
+
+            db.select()
+                .from(quotes)
+                .where(eq(quotes.connectionId, connectionId))
+                .orderBy(asc(quotes.createdAt))
         ]);
 
         // Unifier et trier par date

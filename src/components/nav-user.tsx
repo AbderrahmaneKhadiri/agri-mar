@@ -74,7 +74,7 @@ export function NavUser({
           <div className="flex h-12 w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-hidden border border-transparent">
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="rounded-lg bg-emerald-100 text-emerald-700 font-bold">
+              <AvatarFallback className="rounded-lg bg-[#f8fdf9] text-[#4a8c5c] font-bold">
                 {user.name?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -102,7 +102,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg bg-emerald-50 text-emerald-600 font-bold">
+                <AvatarFallback className="rounded-lg bg-[#f0f8f4] text-[#2c5f42] font-bold">
                   {user.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -125,7 +125,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg bg-emerald-100 text-emerald-700 font-bold">
+                  <AvatarFallback className="rounded-lg bg-[#f8fdf9] text-[#4a8c5c] font-bold">
                     {user.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

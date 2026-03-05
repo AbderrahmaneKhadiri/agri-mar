@@ -13,7 +13,9 @@ import {
     Check,
     Package,
     Banknote,
+    MessageSquareQuote,
 } from "lucide-react";
+import { CounterOfferModal } from "./counter-offer-modal";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -27,6 +29,7 @@ interface QuoteMessageProps {
 export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
     const [loading, setLoading] = useState<string | null>(null);
     const [status, setStatus] = useState(quote.status);
+    const [isCounterOfferOpen, setIsCounterOfferOpen] = useState(false);
 
     const isSender = quote.senderUserId === currentUserId;
 
@@ -61,6 +64,7 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
         PENDING: { label: "En attente", className: "bg-muted text-muted-foreground border-none" },
         ACCEPTED: { label: "Acceptée", className: "bg-green-600 text-white border-none" },
         DECLINED: { label: "Refusée", className: "bg-muted text-muted-foreground border-none" },
+        NEGOTIATING: { label: "En négociation", className: "bg-blue-600 text-white border-none" },
     }[status as string] ?? { label: status, className: "" };
 
     return (
@@ -81,9 +85,16 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                         </span>
                     </div>
                 </div>
-                <Badge variant="outline" className={cn("text-[10px] font-medium px-2.5 py-0.5 rounded-md", statusBadge.className)}>
-                    {statusBadge.label}
-                </Badge>
+                <div className="flex flex-col items-end gap-1.5">
+                    <Badge variant="outline" className={cn("text-[10px] font-medium px-2.5 py-0.5 rounded-md", statusBadge.className)}>
+                        {statusBadge.label}
+                    </Badge>
+                    {quote.parentQuoteId && (
+                        <div className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-tighter border border-blue-100">
+                            Contre-offre
+                        </div>
+                    )}
+                </div>
             </CardHeader>
 
             <Separator />
@@ -157,23 +168,35 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
             {/* Footer */}
             <CardFooter className="px-5 py-4 flex flex-col gap-3">
                 {status === "PENDING" && !isSender ? (
-                    <div className="grid grid-cols-2 gap-3 w-full">
+                    <div className="flex flex-col gap-2 w-full">
+                        <div className="grid grid-cols-2 gap-3 w-full">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRespond("DECLINED")}
+                                disabled={!!loading}
+                                className="h-9 text-[12px] font-medium"
+                            >
+                                {loading === "DECLINED" ? <Loader2 className="size-4 animate-spin" /> : "Décliner"}
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={() => handleRespond("ACCEPTED")}
+                                disabled={!!loading}
+                                className="h-9 text-[12px] font-medium bg-emerald-600 hover:bg-emerald-700"
+                            >
+                                {loading === "ACCEPTED" ? <Loader2 className="size-4 animate-spin" /> : "Accepter"}
+                            </Button>
+                        </div>
                         <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
-                            onClick={() => handleRespond("DECLINED")}
+                            onClick={() => setIsCounterOfferOpen(true)}
                             disabled={!!loading}
-                            className="h-9 text-[12px] font-medium"
+                            className="w-full h-9 text-[12px] font-bold gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-none"
                         >
-                            {loading === "DECLINED" ? <Loader2 className="size-4 animate-spin" /> : "Décliner"}
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={() => handleRespond("ACCEPTED")}
-                            disabled={!!loading}
-                            className="h-9 text-[12px] font-medium"
-                        >
-                            {loading === "ACCEPTED" ? <Loader2 className="size-4 animate-spin" /> : "Accepter"}
+                            <MessageSquareQuote className="size-4" />
+                            Faire une contre-offre
                         </Button>
                     </div>
                 ) : (
@@ -200,6 +223,12 @@ export function QuoteMessage({ quote, currentUserId }: QuoteMessageProps) {
                     )}
                 </div>
             </CardFooter>
+
+            <CounterOfferModal
+                quote={quote}
+                open={isCounterOfferOpen}
+                onOpenChange={setIsCounterOfferOpen}
+            />
         </Card>
     );
 }

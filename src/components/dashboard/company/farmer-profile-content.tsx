@@ -19,6 +19,12 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { getFarmerAnalyticsAction } from "@/actions/agromonitoring.actions";
+import { NdviChart } from "../ndvi-chart";
+import { WeatherCard } from "../weather-card";
+import { SoilCard } from "../soil-card";
+import { Activity } from "lucide-react";
 
 export interface FarmerProfileData {
     id: string;
@@ -46,6 +52,7 @@ export interface FarmerProfileData {
     production?: string;
     since?: Date;
     sentAt?: Date;
+    parcelPolygonId?: string;
 }
 
 interface FarmerProfileContentProps {
@@ -56,6 +63,28 @@ interface FarmerProfileContentProps {
 export function FarmerProfileContent({ data, isCompact = false }: FarmerProfileContentProps) {
     const displayName = data.name || "Agriculteur";
     const displayLocation = data.location || "Localisation non renseignée";
+
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+    useEffect(() => {
+        if (data.parcelPolygonId) {
+            const fetchAnalytics = async () => {
+                setIsLoadingAnalytics(true);
+                try {
+                    const result = await getFarmerAnalyticsAction(data.parcelPolygonId!);
+                    if (result.data) {
+                        setAnalytics(result.data);
+                    }
+                } catch (error) {
+                    console.error("Error fetching analytics in profile:", error);
+                } finally {
+                    setIsLoadingAnalytics(false);
+                }
+            };
+            fetchAnalytics();
+        }
+    }, [data.parcelPolygonId]);
 
     return (
         <div className="flex flex-col">
@@ -215,6 +244,40 @@ export function FarmerProfileContent({ data, isCompact = false }: FarmerProfileC
                         </p>
                     </div>
                 ) : null}
+
+                {data.parcelPolygonId && (
+                    <div className="space-y-4 pt-6 border-t border-border mt-6">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[2px] flex items-center gap-2">
+                                <Activity className="size-3" />
+                                Suivi Satellite & Agronomie
+                            </h4>
+                            <Badge variant="outline" className="text-[9px] font-bold text-slate-400 border-slate-100 uppercase">
+                                Live
+                            </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <WeatherCard
+                                current={analytics?.weather}
+                                forecast={analytics?.forecast}
+                                locationName={data.location || ""}
+                                isSyncing={isLoadingAnalytics}
+                            />
+                            <SoilCard
+                                data={analytics?.soil}
+                                isSyncing={isLoadingAnalytics}
+                            />
+                        </div>
+
+                        <div className="pt-2">
+                            <NdviChart
+                                data={analytics?.ndvi || []}
+                                isSyncing={isLoadingAnalytics}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

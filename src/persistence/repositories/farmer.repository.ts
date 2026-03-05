@@ -1,5 +1,5 @@
 import { db } from "@/persistence/db";
-import { farmerProfiles, farmerPhotos } from "@/persistence/schema";
+import { farmerProfiles, farmerPhotos, parcels } from "@/persistence/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const farmerRepository = {
@@ -26,6 +26,39 @@ export const farmerRepository = {
             .where(eq(farmerProfiles.id, id))
             .returning();
         return result;
+    },
+
+    async createParcel(farmerId: string, geoJson: string, area: string, polygonId: string) {
+        const parsedGeoJson = JSON.parse(geoJson);
+        const [result] = await db.insert(parcels).values({
+            farmerId,
+            name: "Parcelle Principale",
+            polygonId: polygonId,
+            area: area,
+            geoJson: parsedGeoJson
+        }).returning();
+        return result;
+    },
+
+    async getParcelById(id: string) {
+        return await db.query.parcels.findFirst({
+            where: eq(parcels.id, id),
+        });
+    },
+
+    async updateParcel(id: string, data: Partial<typeof parcels.$inferInsert>) {
+        const [result] = await db.update(parcels)
+            .set(data)
+            .where(eq(parcels.id, id))
+            .returning();
+        return result;
+    },
+
+    async getParcelsByFarmerId(farmerId: string) {
+        return await db.query.parcels.findMany({
+            where: eq(parcels.farmerId, farmerId),
+            orderBy: [desc(parcels.createdAt)],
+        });
     },
 
     async getPhotos(farmerProfileId: string) {

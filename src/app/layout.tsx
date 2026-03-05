@@ -31,6 +31,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossOrigin="" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.1/dist/geosearch.css" />
+      </head>
       <body
         className={`${inter.variable} ${geist.variable} ${geistMono.variable} font-sans antialiased`}
         suppressHydrationWarning

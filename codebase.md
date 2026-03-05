@@ -184,7 +184,7 @@ export default eslintConfig;
 ```ts
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
-import "./.next/dev/types/routes.d.ts";
+import "./.next/types/routes.d.ts";
 
 // NOTE: This file should not be edited
 // see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
@@ -1665,10 +1665,13 @@ export default function LoginPage() {
         setError("");
 
         try {
+            console.log("Attempting login for:", email);
             const { data, error } = await signIn.email({
                 email,
                 password,
             });
+
+            console.log("SignIn response:", { data, error });
 
             if (error) {
                 setError(error.message || "Email ou mot de passe incorrect");
@@ -1677,6 +1680,7 @@ export default function LoginPage() {
                 router.refresh();
             }
         } catch (err) {
+            console.error("Login catch error:", err);
             setError("Une erreur inattendue est survenue");
         } finally {
             setLoading(false);
@@ -1712,7 +1716,9 @@ export default function LoginPage() {
                                     <div className="relative group">
                                         <Input
                                             id="email"
+                                            name="email"
                                             type="email"
+                                            autoComplete="username"
                                             placeholder="vous@exemple.com"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
@@ -1725,13 +1731,15 @@ export default function LoginPage() {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-1">
-                                        <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mot de passe</Label>
+                                        <Label htmlFor="password" title="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mot de passe</Label>
                                         <a href="#" className="text-[11px] font-bold text-emerald-600 hover:underline">Oublié ?</a>
                                     </div>
                                     <div className="relative group">
                                         <Input
                                             id="password"
+                                            name="password"
                                             type="password"
+                                            autoComplete="current-password"
                                             placeholder="********"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
@@ -3792,7 +3800,6 @@ export function FarmerMarketClient({ initialFarmers }: { initialFarmers: FarmerL
                                             deliveryCapacity: selectedFarmer.deliveryCapacity,
                                             businessModel: selectedFarmer.businessModel,
                                             longTermContractAvailable: selectedFarmer.longTermContractAvailable,
-                                            production: selectedFarmer.availableProductionVolume,
                                             phone: selectedFarmer.phone,
                                             email: selectedFarmer.businessEmail,
                                         }}
@@ -18177,7 +18184,7 @@ import { inferAdditionalFields } from "better-auth/client/plugins";
 import type { auth } from "./auth";
 
 export const authClient = createAuthClient({
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    baseURL: process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : ""),
     plugins: [inferAdditionalFields<typeof auth>()]
 });
 
@@ -18202,6 +18209,13 @@ export const auth = betterAuth({
     emailVerification: {
         sendOnSignUp: false,
     },
+    advanced: {
+        useSecureCookies: process.env.NODE_ENV === "production",
+    },
+    trustedOrigins: [
+        process.env.NEXT_PUBLIC_APP_URL || "",
+        "https://agri-mar-s97y.vercel.app"
+    ],
     emailAndPassword: {
         enabled: true,
     },

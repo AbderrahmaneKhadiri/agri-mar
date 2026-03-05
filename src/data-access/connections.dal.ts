@@ -39,6 +39,7 @@ export type PartnerDTO = {
     businessModel?: string[] | null;
     longTermContractAvailable?: boolean;
     initialMessage?: string | null;
+    parcelPolygonId?: string;
 };
 
 export type IncomingRequestDTO = {
@@ -74,6 +75,7 @@ export type IncomingRequestDTO = {
     businessModel?: string[] | null;
     longTermContractAvailable?: boolean;
     initialMessage?: string | null;
+    parcelPolygonId?: string;
 };
 
 /**
@@ -129,6 +131,7 @@ export const getIncomingRequests = cache(async (profileId: string, role: "FARMER
                 businessModel: farmer.businessModel,
                 longTermContractAvailable: farmer.longTermContractAvailable,
                 initialMessage: req.initialMessage,
+                parcelPolygonId: (farmer as any).parcels?.[0]?.polygonId,
             };
         }
     });
@@ -185,6 +188,7 @@ export const getAcceptedPartners = cache(async (profileId: string, role: "FARMER
                 deliveryCapacity: farmer.deliveryCapacity ?? false,
                 businessModel: farmer.businessModel,
                 longTermContractAvailable: farmer.longTermContractAvailable,
+                parcelPolygonId: (farmer as any).parcels?.[0]?.polygonId,
             };
         }
     });
@@ -226,6 +230,7 @@ export const getOutgoingRequests = cache(async (profileId: string, role: "FARMER
                 deliveryCapacity: farmer.deliveryCapacity ?? false,
                 businessModel: farmer.businessModel,
                 longTermContractAvailable: farmer.longTermContractAvailable,
+                parcelPolygonId: (farmer as any).parcels?.[0]?.polygonId,
             };
         } else {
             const company = (req as any).company;

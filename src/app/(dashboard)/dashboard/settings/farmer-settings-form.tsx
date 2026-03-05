@@ -23,8 +23,13 @@ import {
     Settings,
     ShieldCheck,
     Info,
-    Camera
+    Camera,
+    Globe,
+    Activity,
+    Plus
 } from "lucide-react";
+import { AddParcelModal } from "@/components/dashboard/farmer/add-parcel-modal";
+import { cn } from "@/lib/utils";
 import {
     Select,
     SelectContent,
@@ -46,11 +51,23 @@ const MAROC_REGIONS = [
     "Fès-Boulemane"
 ];
 
-export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, initialPhotos: any[] }) {
+export function FarmerSettingsForm({
+    profile,
+    initialPhotos,
+    initialParcels = []
+}: {
+    profile: any,
+    initialPhotos: any[],
+    initialParcels?: any[]
+}) {
     const [isLoading, setIsLoading] = useState(false);
     const [photos, setPhotos] = useState(initialPhotos);
     const [uploading, setUploading] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string>(profile.avatarUrl || "");
+    const [isAddParcelModalOpen, setIsAddParcelModalOpen] = useState(false);
+
+    const hasParcels = initialParcels.length > 0;
+    const currentParcel = initialParcels[0];
 
     // Calcul de complétion du profil
     const calculateCompletion = () => {
@@ -149,9 +166,9 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                     <div className="flex-1 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
                             <span className="text-slate-400">Complétion du profil</span>
-                            <span className="text-emerald-600">{completion}%</span>
+                            <span className="text-[#4a8c5c]">{completion}%</span>
                         </div>
-                        <Progress value={completion} className="h-1.5 bg-slate-100 [&>div]:bg-emerald-500" />
+                        <Progress value={completion} className="h-1.5 bg-slate-100 [&>div]:bg-[#4a8c5c]" />
                     </div>
                 </div>
             </div>
@@ -162,7 +179,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                     <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b bg-slate-50/10">
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-900 p-2 rounded-lg text-white shadow-lg shadow-slate-900/10">
+                                <div className="bg-[#2c5f42] p-2 rounded-lg text-white shadow-lg shadow-[#2c5f42]/20">
                                     <User className="size-4" />
                                 </div>
                                 <div>
@@ -250,14 +267,65 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Surface Totale (Hectares)</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.1"
-                                                name="totalAreaHectares"
-                                                defaultValue={profile.totalAreaHectares?.toString() || ""}
-                                                placeholder="10"
-                                                className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
-                                            />
+                                            <div className="space-y-1">
+                                                <Input
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="1.0"
+                                                    name="totalAreaHectares"
+                                                    defaultValue={profile.totalAreaHectares?.toString() || ""}
+                                                    placeholder="10"
+                                                    className="h-11 bg-white border-border rounded-xl px-4 text-[13px] font-semibold focus-visible:ring-slate-100"
+                                                />
+                                                <p className="text-[10px] font-medium text-slate-400 italic ml-1">
+                                                    Note : 1.0 Ha minimum recommandé pour le suivi satellite.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* SECTION: Surveillance Satellite */}
+                                    <div className="space-y-6 pt-4 border-t border-border">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[12px] font-bold text-slate-900 border-b pb-2 flex-1">Surveillance Satellite & Géo-localisation</h4>
+                                        </div>
+
+                                        <div className={cn(
+                                            "p-6 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-6",
+                                            hasParcels ? "bg-[#f0f8f4]/50 border-[#c4dece]" : "bg-slate-50 border-border"
+                                        )}>
+                                            <div className="flex items-start gap-4 flex-1">
+                                                <div className={cn(
+                                                    "size-10 rounded-xl flex items-center justify-center shrink-0 border",
+                                                    hasParcels ? "bg-[#f8fdf9] text-[#4a8c5c] border-[#e0ede5]" : "bg-slate-100 text-slate-500 border-border"
+                                                )}>
+                                                    <Globe className="size-5" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight">
+                                                        {hasParcels ? "Terrain Connecté" : "Terrain Non Connecté"}
+                                                    </p>
+                                                    <p className="text-[11px] font-medium text-slate-500 max-w-[300px]">
+                                                        {hasParcels
+                                                            ? `Votre parcelle de ${currentParcel.area} Ha est enregistrée avec succès.`
+                                                            : "Dessinez votre parcelle sur la carte pour activer les indices de santé (NDVI) et la météo précise."}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setIsAddParcelModalOpen(true)}
+                                                className={cn(
+                                                    "h-10 rounded-xl font-bold text-[10px] uppercase tracking-widest px-6 transition-all",
+                                                    hasParcels
+                                                        ? "border-[#c4dece] text-[#2c5f42] hover:bg-[#f0f8f4]"
+                                                        : "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+                                                )}
+                                            >
+                                                {hasParcels ? "Redessiner le terrain" : <><Plus className="size-3 mr-2" /> Connecter Terrain</>}
+                                            </Button>
                                         </div>
                                     </div>
 
@@ -355,23 +423,23 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
 
                                     <div className="grid grid-cols-2 gap-6 pt-2">
                                         <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
-                                            <input type="checkbox" id="hasColdStorage" name="hasColdStorage" defaultChecked={profile.hasColdStorage} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
+                                            <input type="checkbox" id="hasColdStorage" name="hasColdStorage" defaultChecked={profile.hasColdStorage} className="size-4 rounded-lg border-border text-[#2c5f42] focus:ring-[#4a8c5c]" />
                                             <label htmlFor="hasColdStorage" className="text-[12px] font-bold text-slate-900 cursor-pointer">Stockage Froid / Silo</label>
                                         </div>
                                         <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
-                                            <input type="checkbox" id="deliveryCapacity" name="deliveryCapacity" defaultChecked={profile.deliveryCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
+                                            <input type="checkbox" id="deliveryCapacity" name="deliveryCapacity" defaultChecked={profile.deliveryCapacity} className="size-4 rounded-lg border-border text-[#2c5f42] focus:ring-[#4a8c5c]" />
                                             <label htmlFor="deliveryCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité de Livraison</label>
                                         </div>
                                         <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
-                                            <input type="checkbox" id="exportCapacity" name="exportCapacity" defaultChecked={profile.exportCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
+                                            <input type="checkbox" id="exportCapacity" name="exportCapacity" defaultChecked={profile.exportCapacity} className="size-4 rounded-lg border-border text-[#2c5f42] focus:ring-[#4a8c5c]" />
                                             <label htmlFor="exportCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité d&apos;Exportation</label>
                                         </div>
                                         <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border">
-                                            <input type="checkbox" id="logisticsCapacity" name="logisticsCapacity" defaultChecked={profile.logisticsCapacity} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
+                                            <input type="checkbox" id="logisticsCapacity" name="logisticsCapacity" defaultChecked={profile.logisticsCapacity} className="size-4 rounded-lg border-border text-[#2c5f42] focus:ring-[#4a8c5c]" />
                                             <label htmlFor="logisticsCapacity" className="text-[12px] font-bold text-slate-900 cursor-pointer">Capacité Logistique propre</label>
                                         </div>
                                         <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-xl border border-border md:col-span-2">
-                                            <input type="checkbox" id="longTermContractAvailable" name="longTermContractAvailable" defaultChecked={profile.longTermContractAvailable} className="size-4 rounded-lg border-border text-emerald-600 focus:ring-emerald-500" />
+                                            <input type="checkbox" id="longTermContractAvailable" name="longTermContractAvailable" defaultChecked={profile.longTermContractAvailable} className="size-4 rounded-lg border-border text-[#2c5f42] focus:ring-[#4a8c5c]" />
                                             <label htmlFor="longTermContractAvailable" className="text-[12px] font-bold text-slate-900 cursor-pointer">Ouvert aux contrats à long terme</label>
                                         </div>
                                     </div>
@@ -417,7 +485,7 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                                     <Button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800"
+                                        className="h-11 px-8 rounded-xl bg-[#2c5f42] text-white font-bold hover:bg-[#2c5f42]/90"
                                     >
                                         {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Enregistrer les modifications"}
                                     </Button>
@@ -554,6 +622,11 @@ export function FarmerSettingsForm({ profile, initialPhotos }: { profile: any, i
                     </Card>
                 </div>
             </div>
+
+            <AddParcelModal
+                isOpen={isAddParcelModalOpen}
+                onOpenChange={setIsAddParcelModalOpen}
+            />
         </main>
     );
 }

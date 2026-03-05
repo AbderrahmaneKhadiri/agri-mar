@@ -8,10 +8,14 @@ export const connectionInitiatorEnum = pgEnum("connection_initiator", ["FARMER",
 export const quoteStatusEnum = pgEnum("quote_status", ["PENDING", "ACCEPTED", "DECLINED", "NEGOTIATING"]);
 export const orderStatusEnum = pgEnum("order_status", ["DRAFT", "SIGNED", "DELIVERED", "PAID", "CANCELLED"]);
 export const marketTypeEnum = pgEnum("market_type", ["LOCAL", "INTERNATIONAL", "BOTH"]);
-export const notificationTypeEnum = pgEnum("notification_type", ["CONNECTION_REQUEST", "NEW_MESSAGE", "CONNECTION_ACCEPTED", "NEW_QUOTE", "QUOTE_ACCEPTED"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["CONNECTION_REQUEST", "NEW_MESSAGE", "CONNECTION_ACCEPTED", "NEW_QUOTE", "QUOTE_ACCEPTED", "SYSTEM_ALERT"]);
 export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "SOLD_OUT", "DRAFT"]);
 export const productUnitEnum = pgEnum("product_unit", ["KG", "TONNE", "LITRE", "UNITE", "BOITE", "PALETTE"]);
 export const messageTypeEnum = pgEnum("message_type", ["TEXT", "PRODUCT_INQUIRY"]);
+export const tenderStatusEnum = pgEnum("tender_status", ["OPEN", "CLOSED", "FULFILLED"]);
+export const tenderBidStatusEnum = pgEnum("tender_bid_status", ["PENDING", "ACCEPTED", "REJECTED"]);
+export const harvestStatusEnum = pgEnum("harvest_status", ["PLANNED", "GROWING", "HARVESTED", "CANCELLED"]);
+export const expenseCategoryEnum = pgEnum("expense_category", ["INPUTS", "LABOR", "FUEL", "LOGISTICS", "OTHERS"]);
 
 // --- USERS (Managed by Better-Auth) ---
 export const user = pgTable("user", {
@@ -190,6 +194,7 @@ export const quotes = pgTable("quotes", {
     currency: text("currency").default("MAD").notNull(),
     validUntil: timestamp("valid_until"),
     status: quoteStatusEnum("status").default("PENDING").notNull(),
+    parentQuoteId: uuid("parent_quote_id"), // For negotiation history
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -232,6 +237,82 @@ export const reviews = pgTable("reviews", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- PARCELS (AgroMonitoring Polygons) ---
+export const parcels = pgTable("parcels", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    name: text("name").notNull(),
+    polygonId: text("polygon_id").notNull(),     // ID from AgroMonitoring
+    area: decimal("area").notNull(),             // Area in Hectares
+    geoJson: jsonb("geo_json").notNull(),        // The drawn coordinates (GeoJSON geometry)
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// --- TENDERS (Appels d'offres / Sourcing Requests) ---
+export const tenders = pgTable("tenders", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id").references(() => companyProfiles.id, { onDelete: 'cascade' }).notNull(),
+    title: text("title").notNull(),
+    category: text("category").notNull(),
+    quantity: decimal("quantity").notNull(),
+    unit: productUnitEnum("unit").default("TONNE").notNull(),
+    targetPrice: decimal("target_price"), // Budget visé optionnel (ex: par kg/tonne)
+    region: text("region"), // Région préférée (optionnel)
+    requirements: jsonb("requirements").default([]).notNull().$type<string[]>(), // Certifications etc.
+    description: text("description"),
+    deadline: timestamp("deadline").notNull(),
+    status: tenderStatusEnum("status").default("OPEN").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// --- TENDER BIDS (Candidatures des Fermiers) ---
+export const tenderBids = pgTable("tender_bids", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id").references(() => tenders.id, { onDelete: 'cascade' }).notNull(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    proposedPrice: decimal("proposed_price").notNull(),
+    proposedQuantity: decimal("proposed_quantity").notNull(),
+    availableDate: timestamp("available_date").notNull(),
+    message: text("message"),
+    status: tenderBidStatusEnum("status").default("PENDING").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// --- HARVEST PLANS (Digital Harvest Calendar) ---
+export const harvestPlans = pgTable("harvest_plans", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    cropName: text("crop_name").notNull(),
+    variety: text("variety"),
+    plantingDate: timestamp("planting_date").notNull(),
+    estimatedHarvestDate: timestamp("estimated_harvest_date").notNull(),
+    actualHarvestDate: timestamp("actual_harvest_date"),
+    status: harvestStatusEnum("status").default("PLANNED").notNull(),
+    area: decimal("area").notNull(), // Surface cultivée
+    estimatedYield: decimal("estimated_yield").notNull(), // Rendement estimé
+    actualYield: decimal("actual_yield"), // Rendement réel après récolte
+    actualSalePrice: decimal("actual_sale_price"), // Prix de vente au kilo/tonne
+    unit: productUnitEnum("unit").default("TONNE").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// --- EXPENSES (ERP Lite) ---
+export const expenses = pgTable("expenses", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    harvestPlanId: uuid("harvest_plan_id").references(() => harvestPlans.id, { onDelete: 'set null' }),
+    category: expenseCategoryEnum("category").notNull(),
+    amount: decimal("amount").notNull(),
+    description: text("description"),
+    date: timestamp("date").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // --- RELATIONS ---
 export const userRelations = relations(user, ({ one, many }) => ({
     farmerProfile: one(farmerProfiles),
@@ -246,11 +327,30 @@ export const farmerProfileRelations = relations(farmerProfiles, ({ one, many }) 
     connections: many(connections),
     photos: many(farmerPhotos),
     products: many(products),
+    parcels: many(parcels),
+    tenderBids: many(tenderBids),
+    harvestPlans: many(harvestPlans),
+    expenses: many(expenses),
+}));
+
+export const harvestPlanRelations = relations(harvestPlans, ({ one, many }) => ({
+    farmer: one(farmerProfiles, { fields: [harvestPlans.farmerId], references: [farmerProfiles.id] }),
+    expenses: many(expenses),
+}));
+
+export const parcelRelations = relations(parcels, ({ one }) => ({
+    farmer: one(farmerProfiles, { fields: [parcels.farmerId], references: [farmerProfiles.id] }),
+}));
+
+export const expenseRelations = relations(expenses, ({ one }) => ({
+    farmer: one(farmerProfiles, { fields: [expenses.farmerId], references: [farmerProfiles.id] }),
+    harvestPlan: one(harvestPlans, { fields: [expenses.harvestPlanId], references: [harvestPlans.id] }),
 }));
 
 export const companyProfileRelations = relations(companyProfiles, ({ one, many }) => ({
     user: one(user, { fields: [companyProfiles.userId], references: [user.id] }),
     connections: many(connections),
+    tenders: many(tenders),
 }));
 
 export const connectionRelations = relations(connections, ({ one, many }) => ({
@@ -263,6 +363,7 @@ export const connectionRelations = relations(connections, ({ one, many }) => ({
 export const quoteRelations = relations(quotes, ({ one }) => ({
     connection: one(connections, { fields: [quotes.connectionId], references: [connections.id] }),
     sender: one(user, { fields: [quotes.senderUserId], references: [user.id] }),
+    parentQuote: one(quotes, { fields: [quotes.parentQuoteId], references: [quotes.id], relationName: "negotiationThread" }),
 }));
 
 export const messageRelations = relations(messages, ({ one }) => ({
@@ -281,6 +382,16 @@ export const farmerPhotoRelations = relations(farmerPhotos, ({ one }) => ({
 export const reviewRelations = relations(reviews, ({ one }) => ({
     reviewer: one(user, { fields: [reviews.fromUserId], references: [user.id], relationName: "reviewer" }),
     reviewee: one(user, { fields: [reviews.toUserId], references: [user.id], relationName: "reviewee" }),
+}));
+
+export const tenderRelations = relations(tenders, ({ one, many }) => ({
+    company: one(companyProfiles, { fields: [tenders.companyId], references: [companyProfiles.id] }),
+    bids: many(tenderBids),
+}));
+
+export const tenderBidRelations = relations(tenderBids, ({ one }) => ({
+    tender: one(tenders, { fields: [tenderBids.tenderId], references: [tenders.id] }),
+    farmer: one(farmerProfiles, { fields: [tenderBids.farmerId], references: [farmerProfiles.id] }),
 }));
 
 export const productRelations = relations(products, ({ one }) => ({

@@ -1,33 +1,65 @@
 import { db } from "@/persistence/db";
-import { connections, companyProfiles, farmerProfiles } from "@/persistence/schema";
-import { and, eq } from "drizzle-orm";
+import { connections, companyProfiles, farmerProfiles, parcels } from "@/persistence/schema";
+import { and, eq, sql, inArray, desc } from "drizzle-orm";
 
 /**
  * RAW QUERY: Récupère les demandes de connexion reçues par un profil (FARMER ou COMPANY).
  */
 export async function getIncomingConnectionsFromDb(profileId: string, profileType: "FARMER" | "COMPANY") {
     if (profileType === "FARMER") {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            company: companyProfiles,
+        })
+            .from(connections)
+            .leftJoin(companyProfiles, eq(connections.companyId, companyProfiles.id))
+            .where(and(
                 eq(connections.farmerId, profileId),
                 eq(connections.initiatedBy, "COMPANY"),
                 eq(connections.status, "PENDING")
-            ),
-            with: {
-                company: true,
-            }
-        });
+            ));
+
+        return results;
     } else {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            farmer: farmerProfiles,
+            // We'll map parcels separately or join them
+        })
+            .from(connections)
+            .leftJoin(farmerProfiles, eq(connections.farmerId, farmerProfiles.id))
+            .where(and(
                 eq(connections.companyId, profileId),
                 eq(connections.initiatedBy, "FARMER"),
                 eq(connections.status, "PENDING")
-            ),
-            with: {
-                farmer: true,
-            }
-        });
+            ));
+
+        // For each farmer, we might need their parcels. 
+        // To keep it simple and avoid lateral joins, we fetch all parcels for these farmers.
+        const farmerIds = results.filter(r => r.farmer).map(r => r.farmer!.id);
+        const allParcels = farmerIds.length > 0 ? await db.select().from(parcels).where(inArray(parcels.farmerId, farmerIds)).orderBy(desc(parcels.createdAt)) : [];
+
+        return results.map(r => ({
+            ...r,
+            farmer: r.farmer ? {
+                ...r.farmer,
+                parcels: allParcels.filter(p => p.farmerId === r.farmer!.id)
+            } : null
+        }));
     }
 }
 
@@ -35,13 +67,15 @@ export async function getIncomingConnectionsFromDb(profileId: string, profileTyp
  * RAW QUERY: Vérifie si une connexion active (ACCEPTED) existe entre un agriculteur et une entreprise.
  */
 export async function checkConnectionStatus(farmerId: string, companyId: string) {
-    const record = await db.query.connections.findFirst({
-        where: and(
+    const results = await db.select({ status: connections.status })
+        .from(connections)
+        .where(and(
             eq(connections.farmerId, farmerId),
             eq(connections.companyId, companyId)
-        )
-    });
-    return record?.status || null;
+        ))
+        .limit(1);
+
+    return results[0]?.status || null;
 }
 
 /**
@@ -49,25 +83,54 @@ export async function checkConnectionStatus(farmerId: string, companyId: string)
  */
 export async function getAcceptedPartnersFromDb(profileId: string, profileType: "FARMER" | "COMPANY") {
     if (profileType === "FARMER") {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            company: companyProfiles,
+        })
+            .from(connections)
+            .leftJoin(companyProfiles, eq(connections.companyId, companyProfiles.id))
+            .where(and(
                 eq(connections.farmerId, profileId),
                 eq(connections.status, "ACCEPTED")
-            ),
-            with: {
-                company: true,
-            }
-        });
+            ));
+
+        return results;
     } else {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            farmer: farmerProfiles,
+        })
+            .from(connections)
+            .leftJoin(farmerProfiles, eq(connections.farmerId, farmerProfiles.id))
+            .where(and(
                 eq(connections.companyId, profileId),
                 eq(connections.status, "ACCEPTED")
-            ),
-            with: {
-                farmer: true,
-            }
-        });
+            ));
+
+        const farmerIds = results.map(r => r.farmer!.id);
+        const allParcels = farmerIds.length > 0 ? await db.select().from(parcels).where(inArray(parcels.farmerId, farmerIds)).orderBy(desc(parcels.createdAt)) : [];
+
+        return results.map(r => ({
+            ...r,
+            farmer: r.farmer ? {
+                ...r.farmer,
+                parcels: allParcels.filter(p => p.farmerId === r.farmer!.id)
+            } : null
+        }));
     }
 }
 
@@ -76,27 +139,57 @@ export async function getAcceptedPartnersFromDb(profileId: string, profileType: 
  */
 export async function getOutgoingConnectionsFromDb(profileId: string, profileType: "FARMER" | "COMPANY") {
     if (profileType === "COMPANY") {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            farmer: farmerProfiles,
+        })
+            .from(connections)
+            .leftJoin(farmerProfiles, eq(connections.farmerId, farmerProfiles.id))
+            .where(and(
                 eq(connections.companyId, profileId),
                 eq(connections.initiatedBy, "COMPANY"),
                 eq(connections.status, "PENDING")
-            ),
-            with: {
-                farmer: true,
-            }
-        });
+            ));
+
+        const farmerIds = results.map(r => r.farmer!.id);
+        const allParcels = farmerIds.length > 0 ? await db.select().from(parcels).where(inArray(parcels.farmerId, farmerIds)).orderBy(desc(parcels.createdAt)) : [];
+
+        return results.map(r => ({
+            ...r,
+            farmer: r.farmer ? {
+                ...r.farmer,
+                parcels: allParcels.filter(p => p.farmerId === r.farmer!.id)
+            } : null
+        }));
     } else {
-        return await db.query.connections.findMany({
-            where: and(
+        const results = await db.select({
+            id: connections.id,
+            farmerId: connections.farmerId,
+            companyId: connections.companyId,
+            status: connections.status,
+            initiatedBy: connections.initiatedBy,
+            initialMessage: connections.initialMessage,
+            createdAt: connections.createdAt,
+            updatedAt: connections.updatedAt,
+            company: companyProfiles,
+        })
+            .from(connections)
+            .leftJoin(companyProfiles, eq(connections.companyId, companyProfiles.id))
+            .where(and(
                 eq(connections.farmerId, profileId),
                 eq(connections.initiatedBy, "FARMER"),
                 eq(connections.status, "PENDING")
-            ),
-            with: {
-                company: true,
-            }
-        });
+            ));
+
+        return results;
     }
 }
+
 

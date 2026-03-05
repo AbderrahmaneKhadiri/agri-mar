@@ -39,6 +39,7 @@ import {
     ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { FarmMapField } from "@/components/ui/farm-map-field";
 
 const MAROC_REGIONS = [
     "Souss-Massa",
@@ -99,6 +100,13 @@ export default function FarmerOnboardingPage() {
         );
     };
 
+    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        // Only allow submission from the actual submit button on the last step
+        if (step !== totalSteps - 1) {
+            e.preventDefault();
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 md:p-6 lg:p-12">
             <div className="w-full max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -121,7 +129,7 @@ export default function FarmerOnboardingPage() {
                 </div>
 
                 <Card className="shadow-2xl shadow-slate-200/60 border-none rounded-3xl overflow-hidden bg-white">
-                    <form action={formAction}>
+                    <form action={formAction} onSubmit={handleFormSubmit}>
                         <CardContent className="p-8 md:p-10 min-h-[600px] flex flex-col justify-center">
                             {state?.error && (
                                 <div className="mb-8 p-4 text-sm font-medium text-red-600 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3">
@@ -176,16 +184,18 @@ export default function FarmerOnboardingPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="fullName" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Nom du Gérant</Label>
                                         <div className="relative">
-                                            <Input id="fullName" name="fullName" placeholder="Ex: Ahmed Mansouri" required={step === 1} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold" />
+                                            <Input id="fullName" name="fullName" placeholder="Ex: Ahmed Mansouri" required={step === 1} className={cn("h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold", state?.fields?.fullName && "border-red-500")} />
                                             <User className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
+                                        {state?.fields?.fullName && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.fullName[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="farmName" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Nom de l'Exploitation</Label>
                                         <div className="relative">
-                                            <Input id="farmName" name="farmName" placeholder="Ex: Domaine Berkane" required={step === 1} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold" />
+                                            <Input id="farmName" name="farmName" placeholder="Ex: Domaine Berkane" required={step === 1} className={cn("h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold", state?.fields?.farmName && "border-red-500")} />
                                             <Building2 className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
+                                        {state?.fields?.farmName && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.farmName[0]}</p>}
                                     </div>
                                 </div>
 
@@ -193,9 +203,10 @@ export default function FarmerOnboardingPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="phone" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">WhatsApp Professionnel</Label>
                                         <div className="relative">
-                                            <Input id="phone" name="phone" placeholder="+212 6..." required={step === 1} className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tabular-nums" />
+                                            <Input id="phone" name="phone" placeholder="+212 6..." required={step === 1} className={cn("h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tabular-nums", state?.fields?.phone && "border-red-500")} />
                                             <Phone className="absolute left-4 top-3.5 size-4 text-emerald-500" />
                                         </div>
+                                        {state?.fields?.phone && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.phone[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="businessEmail" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Email (Optionnel)</Label>
@@ -227,6 +238,7 @@ export default function FarmerOnboardingPage() {
                                                 </ComboboxList>
                                             </ComboboxContent>
                                         </Combobox>
+                                        {state?.fields?.region && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.region[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="city-input" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Ville</Label>
@@ -251,24 +263,14 @@ export default function FarmerOnboardingPage() {
                                                 </ComboboxContent>
                                             </Combobox>
                                         </div>
+                                        {state?.fields?.city && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.city[0]}</p>}
                                     </div>
                                 </div>
                             </div>
 
                             {/* STEP 2: CAPACITY */}
                             <div className={cn("space-y-8", step !== 2 && "hidden")}>
-                                <div className="space-y-4">
-                                    <Label htmlFor="totalAreaHectares" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Surface Totale (Hectares)</Label>
-                                    <div className="flex items-center gap-6">
-                                        <div className="relative">
-                                            <Input id="totalAreaHectares" name="totalAreaHectares" type="number" step="0.1" placeholder="10.5" className="h-14 bg-white border border-border rounded-2xl pl-12 pr-6 text-xl font-extrabold text-emerald-700 w-36 shadow-sm focus:ring-2 focus:ring-emerald-100 transition-all" />
-                                            <LandPlot className="absolute left-4 top-4.5 size-5 text-emerald-300" />
-                                        </div>
-                                        <div className="text-[12px] font-medium text-slate-400 leading-relaxed max-w-xs">
-                                            Indiquez la surface cultivable pour permettre au réseau d'évaluer votre capacité.
-                                        </div>
-                                    </div>
-                                </div>
+                                <FarmMapField isActive={step === 2} />
 
                                 <div className="space-y-4">
                                     <Label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Type d'Irrigation</Label>
@@ -402,9 +404,10 @@ export default function FarmerOnboardingPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="iceNumber" className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 ml-1">Numéro ICE (15 chiffres)</Label>
                                         <div className="relative">
-                                            <Input id="iceNumber" name="iceNumber" placeholder="Ex: 002134..." className="h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tracking-[2px] tabular-nums" />
+                                            <Input id="iceNumber" name="iceNumber" placeholder="Ex: 002134..." className={cn("h-12 bg-slate-50/50 border-border rounded-xl pl-11 text-[13px] font-bold tracking-[2px] tabular-nums", state?.fields?.iceNumber && "border-red-500")} />
                                             <Scale className="absolute left-4 top-3.5 size-4 text-slate-400" />
                                         </div>
+                                        {state?.fields?.iceNumber && <p className="text-[10px] font-bold text-red-500 ml-1">{state.fields.iceNumber[0]}</p>}
                                         <p className="text-[10px] text-slate-400 ml-1">Indispensable pour être payé par virement par les Hôtels.</p>
                                     </div>
                                     <div className="space-y-2">

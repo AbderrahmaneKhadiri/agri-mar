@@ -78,9 +78,9 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                     <div className="flex-1 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
                             <span className="text-slate-400">Complétion du profil</span>
-                            <span className="text-emerald-600">{completion}%</span>
+                            <span className="text-[#4a8c5c]">{completion}%</span>
                         </div>
-                        <Progress value={completion} className="h-1.5 bg-slate-100 [&>div]:bg-emerald-500" />
+                        <Progress value={completion} className="h-1.5 bg-slate-100 [&>div]:bg-[#4a8c5c]" />
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                     <Card className="border-border shadow-sm bg-white rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b bg-slate-50/10">
                             <div className="flex items-center gap-3">
-                                <div className="bg-slate-900 p-2 rounded-lg text-white shadow-lg shadow-slate-900/10">
+                                <div className="bg-[#2c5f42] p-2 rounded-lg text-white shadow-lg shadow-[#2c5f42]/20">
                                     <Building2 className="size-4" />
                                 </div>
                                 <div>
@@ -177,7 +177,7 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                                     <Button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="h-11 px-8"
+                                        className="h-11 px-8 rounded-xl bg-[#2c5f42] text-white font-bold hover:bg-[#2c5f42]/90"
                                     >
                                         {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Enregistrer les modifications"}
                                     </Button>
@@ -226,19 +226,19 @@ export function CompanySettingsForm({ profile }: { profile: any }) {
                             </div>
                         </div>
 
-                        <div className="mt-8 p-4 rounded-xl bg-emerald-50 border border-emerald-100 flex items-start gap-3 text-left">
-                            <ShieldCheck className="size-4 text-emerald-500 shrink-0 mt-0.5" />
-                            <p className="text-[11px] font-bold text-emerald-800 leading-relaxed uppercase tracking-tight">
+                        <div className="mt-8 p-4 rounded-xl bg-[#f0f8f4] border border-[#c4dece] flex items-start gap-3 text-left">
+                            <ShieldCheck className="size-4 text-[#4a8c5c] shrink-0 mt-0.5" />
+                            <p className="text-[11px] font-bold text-[#2c5f42] leading-relaxed uppercase tracking-tight">
                                 Boostez votre crédibilité
                             </p>
-                            <p className="text-[11px] font-medium text-emerald-700 leading-relaxed mt-1">
+                            <p className="text-[11px] font-medium text-slate-700 leading-relaxed mt-1">
                                 Un profil complet rassure les agriculteurs et facilite la signature de nouveaux contrats.
                             </p>
                         </div>
 
-                        <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3 text-left">
-                            <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
-                            <p className="text-[11px] font-medium text-blue-800 leading-relaxed">
+                        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-border flex items-start gap-3 text-left">
+                            <Info className="size-4 text-slate-500 shrink-0 mt-0.5" />
+                            <p className="text-[11px] font-medium text-slate-800 leading-relaxed">
                                 Les informations de votre entreprise sont essentielles pour la facturation et les contrats officiels.
                             </p>
                         </div>

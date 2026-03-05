@@ -10,6 +10,7 @@ export const farmerProfileSchema = z.object({
     businessEmail: z.string().email("Email invalide").optional().or(z.literal("")),
 
     totalAreaHectares: z.union([z.string(), z.number()]).optional().transform(val => val ? String(val) : "0"),
+    parcelGeoJson: z.string().optional().or(z.literal("")),
     cropTypes: z.array(z.string()).default([]),
     livestockType: z.string().optional(),
     avgAnnualProduction: z.string().default("Non spécifié"),

@@ -45,7 +45,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                     />
                     <Bar
                         dataKey="revenue"
-                        fill="#16a34a"
+                        fill="#2c5f42"
                         radius={[6, 6, 0, 0]}
                         barSize={32}
                     />

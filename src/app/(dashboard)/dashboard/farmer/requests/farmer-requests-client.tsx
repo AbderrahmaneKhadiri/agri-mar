@@ -210,7 +210,7 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                                 En attente
                                             </div>
                                         ) : request.status === "ACCEPTED" ? (
-                                            <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-50 text-emerald-600 px-2.5 py-0.5 rounded-full w-fit border border-emerald-100/50">
+                                            <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-[#f0f8f4] text-[#2c5f42] px-2.5 py-0.5 rounded-full w-fit border border-[#e0ede5]">
                                                 <Check className="size-2.5" />
                                                 Autorisé
                                             </div>
@@ -229,7 +229,7 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                                     size="sm"
                                                     onClick={() => handleAction(request.id, "ACCEPTED")}
                                                     disabled={!!isProcessing}
-                                                    className="h-7 px-2.5 bg-emerald-600 text-white border-none hover:bg-emerald-500 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-lg"
+                                                    className="h-7 px-2.5 bg-[#2c5f42] text-white border-none hover:bg-[#2c5f42]/90 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-lg"
                                                 >
                                                     {isProcessing === request.id ? <Loader2 className="size-3 animate-spin" /> : "Autoriser"}
                                                 </Button>

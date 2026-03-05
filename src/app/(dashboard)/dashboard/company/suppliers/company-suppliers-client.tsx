@@ -314,6 +314,7 @@ export function CompanySuppliersClient({ initialPartners }: { initialPartners: P
                         longTermContractAvailable: selectedPartner.longTermContractAvailable,
                         production: selectedPartner.production,
                         since: selectedPartner.since,
+                        parcelPolygonId: selectedPartner.parcelPolygonId,
                     } : null}
                 />
             </div>

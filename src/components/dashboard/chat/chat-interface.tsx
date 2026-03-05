@@ -224,8 +224,8 @@ export function ChatInterface({
                                 className={cn(
                                     "mx-2 px-3 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3",
                                     isSelected
-                                        ? "bg-muted"
-                                        : "hover:bg-muted/50"
+                                        ? "bg-[#f0f8f4] text-[#2c5f42] border border-[#e0ede5]"
+                                        : "hover:bg-muted/50 border border-transparent"
                                 )}
                             >
                                 {/* Avatar */}
@@ -236,7 +236,7 @@ export function ChatInterface({
                                             {partner.name.charAt(0).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span className="absolute -right-0.5 -bottom-0.5 size-2.5 bg-emerald-500 rounded-full border-2 border-white" />
+                                    <span className="absolute -right-0.5 -bottom-0.5 size-2.5 bg-[#4a8c5c] rounded-full border-2 border-white" />
                                 </div>
 
                                 {/* Info */}
@@ -244,13 +244,19 @@ export function ChatInterface({
                                     <div className="flex justify-between items-baseline gap-2 mb-0.5">
                                         <span className={cn(
                                             "text-[13px] font-semibold truncate",
-                                            isSelected ? "text-foreground" : "text-foreground"
+                                            isSelected ? "text-[#2c5f42]" : "text-foreground"
                                         )}>
                                             {partner.name}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground shrink-0">12:45</span>
+                                        <span className={cn(
+                                            "text-[10px] shrink-0",
+                                            isSelected ? "text-[#4a8c5c]" : "text-muted-foreground"
+                                        )}>12:45</span>
                                     </div>
-                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest truncate">
+                                    <p className={cn(
+                                        "text-[10px] font-semibold uppercase tracking-widest truncate",
+                                        isSelected ? "text-[#4a8c5c]" : "text-muted-foreground"
+                                    )}>
                                         {partner.industry || "Partenaire"}
                                     </p>
                                 </div>
@@ -275,8 +281,8 @@ export function ChatInterface({
                                 <div>
                                     <h4 className="font-bold text-[14px] text-slate-900 tracking-tight leading-none mb-1">{selectedPartner.name}</h4>
                                     <div className="flex items-center gap-2">
-                                        <span className="size-1.5 bg-green-500 rounded-full" />
-                                        <span className="text-[10px] font-medium text-green-600 uppercase tracking-widest">En ligne</span>
+                                        <span className="size-1.5 bg-[#4a8c5c] rounded-full" />
+                                        <span className="text-[10px] font-medium text-[#4a8c5c] uppercase tracking-widest">En ligne</span>
                                     </div>
                                 </div>
                             </div>
@@ -324,7 +330,7 @@ export function ChatInterface({
                                                 <div className={cn(
                                                     "px-4 py-3 text-[13.5px] font-medium leading-relaxed shadow-sm relative",
                                                     isMe
-                                                        ? "bg-slate-900 text-white rounded-2xl rounded-tr-none"
+                                                        ? "bg-[#2c5f42] text-white rounded-2xl rounded-tr-none"
                                                         : "bg-white border border-border text-slate-700 rounded-2xl rounded-tl-none",
                                                     item.status === "sending" && "opacity-50"
                                                 )}>
@@ -332,7 +338,7 @@ export function ChatInterface({
                                                     {isMe && (
                                                         <div className="absolute right-0 top-full mt-1.5 flex items-center gap-1.5">
                                                             <span className="text-[9px] font-bold text-slate-400 uppercase">{format(new Date(item.createdAt), "HH:mm")}</span>
-                                                            {item.status === "sending" ? <Loader2 className="size-2.5 animate-spin text-slate-300" /> : <CheckCheck className="size-2.5 text-slate-400" />}
+                                                            {item.status === "sending" ? <Loader2 className="size-2.5 animate-spin text-slate-300" /> : <CheckCheck className="size-2.5 text-[#4a8c5c]" />}
                                                         </div>
                                                     )}
                                                     {!isMe && (
@@ -372,7 +378,7 @@ export function ChatInterface({
                                     <Button
                                         type="submit"
                                         size="icon"
-                                        className="absolute right-1.5 top-1.5 size-8"
+                                        className={cn("absolute right-1.5 top-1.5 size-8 text-white", newMessage.trim() && !isSending ? "bg-[#2c5f42] hover:bg-[#2c5f42]/90" : "")}
                                         disabled={!newMessage.trim() || isSending}
                                     >
                                         {isSending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}

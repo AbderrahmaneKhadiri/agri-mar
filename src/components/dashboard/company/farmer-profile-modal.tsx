@@ -36,6 +36,7 @@ export interface FarmerProfileData {
     production?: string;
     since?: Date;
     sentAt?: Date;
+    parcelPolygonId?: string;
 }
 
 interface FarmerProfileModalProps {

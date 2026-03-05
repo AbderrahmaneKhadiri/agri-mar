@@ -1,6 +1,7 @@
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
 import { defineAbilityFor } from "@/lib/casl";
 import { FarmerProfileInput, farmerProfileSchema } from "@/lib/validations/farmer-profile.schema";
+import { createPolygonOnAgroMonitoring } from "@/services/agromonitoring.service";
 
 export async function createFarmerProfile(
     userId: string,
@@ -21,10 +22,12 @@ export async function createFarmerProfile(
         }
 
         // 3. Data Sanitize
-        // Note: Drizzle decimal type often expects a string to avoid precision issues
+        // 3. Data Sanitize
+        const { parcelGeoJson, ...profileData } = validatedData.data;
+
         const profileToInsert = {
             userId,
-            ...validatedData.data,
+            ...profileData,
             updatedAt: new Date(),
         };
 
@@ -36,6 +39,31 @@ export async function createFarmerProfile(
 
         // 5. Persistence: Call Repository
         const newProfile = await farmerRepository.create(profileToInsert);
+
+        // Save Polygon if provided
+        if (parcelGeoJson && parcelGeoJson !== "") {
+            let apiPolygonId = "WAITING_API_SYNC";
+            try {
+                // 1. Call AgroMonitoring API
+                const parsedGeo = JSON.parse(parcelGeoJson);
+                const apiResponse = await createPolygonOnAgroMonitoring(`Farm_${newProfile.id.substring(0, 8)}`, parsedGeo);
+                apiPolygonId = apiResponse.id;
+            } catch (err) {
+                console.error("AgroMonitoring API Sync Failed (Onboarding continues):", err);
+            }
+
+            // 2. Save to our database (even if API failed, we save the GeoJSON)
+            try {
+                await farmerRepository.createParcel(
+                    newProfile.id,
+                    parcelGeoJson,
+                    profileData.totalAreaHectares || "0",
+                    apiPolygonId
+                );
+            } catch (dbErr) {
+                console.error("Critical error saving parcel to DB:", dbErr);
+            }
+        }
 
         // 6. Return standardisé
         return { success: true, data: newProfile };

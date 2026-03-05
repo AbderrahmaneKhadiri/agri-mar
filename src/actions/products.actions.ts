@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/persistence/db";
-import { farmerProfiles } from "@/persistence/schema";
+import { farmerProfiles, harvestPlans, products } from "@/persistence/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
@@ -96,5 +96,60 @@ export async function getMarketProductsAction(filters?: { category?: string, sea
     } catch (error: any) {
         console.error("getMarketProductsAction Error:", error);
         return [];
+    }
+}
+
+export async function syncCatalogWithHarvestsAction() {
+    try {
+        const farmerId = await getFarmerId();
+
+        // 1. Get all harvested plans for this farmer
+        const harvestedPlans = await db.query.harvestPlans.findMany({
+            where: eq(harvestPlans.farmerId, farmerId),
+        });
+
+        const completedHarvests = harvestedPlans.filter(h => h.status === "HARVESTED");
+
+        if (completedHarvests.length === 0) {
+            return { success: true, message: "Aucune récolte terminée à synchroniser." };
+        }
+
+        // 2. Get existing products names to avoid duplicates (naive check)
+        const existingProducts = await db.query.products.findMany({
+            where: eq(products.farmerId, farmerId),
+        });
+        const existingNames = new Set(existingProducts.map(p => p.name.toLowerCase()));
+
+        let addedCount = 0;
+
+        for (const harvest of completedHarvests) {
+            if (!existingNames.has(harvest.cropName.toLowerCase())) {
+                await createProduct({
+                    farmerId,
+                    name: harvest.cropName,
+                    description: `Récolte fraîche de ${harvest.cropName} (${harvest.variety || 'variété standard'}).`,
+                    price: harvest.actualSalePrice || "0",
+                    unit: harvest.unit || "KG",
+                    stockQuantity: harvest.actualYield || "0",
+                    category: "Légumes", // Default category, could be improved
+                    status: "ACTIVE",
+                    minOrderQuantity: "1",
+                    images: []
+                });
+                addedCount++;
+                existingNames.add(harvest.cropName.toLowerCase());
+            }
+        }
+
+        revalidatePath("/dashboard/farmer?tab=products");
+        return {
+            success: true,
+            message: addedCount > 0
+                ? `${addedCount} produit(s) ajouté(s) au catalogue depuis vos récoltes.`
+                : "Votre catalogue est déjà à jour avec vos récoltes."
+        };
+    } catch (error: any) {
+        console.error("syncCatalogWithHarvestsAction Error:", error);
+        return { error: error.message || "Erreur lors de la synchronisation" };
     }
 }

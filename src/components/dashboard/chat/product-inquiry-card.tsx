@@ -34,7 +34,7 @@ export function ProductInquiryCard({ metadata, isMe }: ProductInquiryCardProps) 
                 isMe ? "bg-muted/50 border-border/50" : "bg-slate-50/50 border-border"
             )}>
                 <div className="flex items-center gap-2">
-                    <Tag className="size-3.5 text-emerald-600" />
+                    <Tag className="size-3.5 text-[#2c5f42]" />
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                         {metadata.category}
                     </span>
@@ -70,7 +70,7 @@ export function ProductInquiryCard({ metadata, isMe }: ProductInquiryCardProps) 
 
                         <div className="space-y-2">
                             <div className="flex items-baseline gap-1.5">
-                                <span className="text-lg font-semibold tracking-tight text-emerald-600">
+                                <span className="text-lg font-semibold tracking-tight text-[#2c5f42]">
                                     {metadata.price}
                                 </span>
                                 <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -101,7 +101,7 @@ export function ProductInquiryCard({ metadata, isMe }: ProductInquiryCardProps) 
                     <Button
                         asChild
                         size="sm"
-                        className="w-full h-8 text-[11px] font-semibold uppercase tracking-widest rounded-lg transition-all bg-neutral-900 text-white hover:bg-neutral-800 shadow-sm"
+                        className="w-full h-8 text-[11px] font-semibold uppercase tracking-widest rounded-lg transition-all bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 shadow-sm"
                     >
                         <Link href={`/dashboard/company/products`}>
                             Voir le catalogue <ArrowRight className="ml-2 size-3.5" />

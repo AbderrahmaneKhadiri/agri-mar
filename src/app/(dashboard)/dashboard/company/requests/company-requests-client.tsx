@@ -151,7 +151,7 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                             placeholder="Rechercher un agriculteur ou une ferme..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-border shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-border focus:border-emerald-500 transition-colors"
+                            className="w-full bg-white border border-border shadow-sm h-10 pl-9 rounded-lg text-[13px] hover:border-border focus:border-[#2c5f42] transition-colors"
                         />
                     </div>
 
@@ -214,12 +214,12 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
 
             <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
                 <Table>
-                    <TableHeader className="bg-slate-50/50">
+                    <TableHeader className="bg-[#f8fdf9]">
                         <TableRow className="border-border hover:bg-transparent h-10">
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight pl-4">Destinataire</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Date d'envoi</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Region</TableHead>
+                            <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight pl-4">Destinataire</TableHead>
+                            <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Date d'envoi</TableHead>
+                            <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Status</TableHead>
+                            <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Region</TableHead>
                             <TableHead className="w-[120px] text-right pr-4"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -249,7 +249,7 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                                         {format(new Date(request.sentAt), "d MMM yyyy", { locale: fr })}
                                     </TableCell>
                                     <TableCell className="py-2">
-                                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-100 text-[9px] font-bold uppercase tracking-tighter px-2 py-0.5 rounded-full">
+                                        <Badge variant="outline" className="bg-[#f0f8f4] text-[#2c5f42] border-[#c4dece] text-[9px] font-bold uppercase tracking-tighter px-2 py-0.5 rounded-full">
                                             <Clock className="size-2.5 mr-1" /> En attente
                                         </Badge>
                                     </TableCell>
