@@ -29,6 +29,7 @@ import {
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
     Table,
@@ -112,7 +113,7 @@ export default function MarketplaceProductsPage() {
         });
 
         if (result.error) {
-            alert(result.error);
+            toast.error(result.error);
             setIsContacting(null);
         } else {
             router.push(`/dashboard/company/messages`);
@@ -127,7 +128,7 @@ export default function MarketplaceProductsPage() {
             setSelectedFarmerProfile(result.data);
             setIsProfileModalOpen(true);
         } else {
-            alert(result.error);
+            toast.error(result.error);
         }
         setIsLoadingProfile(false);
     };

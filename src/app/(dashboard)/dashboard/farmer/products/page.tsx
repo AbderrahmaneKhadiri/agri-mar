@@ -46,6 +46,18 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 export default function FarmerProductsPage() {
     const [products, setProducts] = useState<ProductSelectDTO[]>([]);
@@ -99,14 +111,37 @@ export default function FarmerProductsPage() {
         setIsFormOpen(true);
     };
 
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+    });
+
     const handleDelete = async (id: string) => {
-        if (!confirm("Voulez-vous vraiment supprimer ce produit ?")) return;
-        const result = await deleteProductAction(id);
-        if (result.success) {
-            setProducts(products.filter(p => p.id !== id));
-        } else {
-            alert(result.error);
-        }
+        setConfirmConfig({
+            isOpen: true,
+            title: "Supprimer le produit ?",
+            description: "Êtes-vous sûr de vouloir retirer ce produit de votre catalogue ? Cette action est irréversible.",
+            onConfirm: async () => {
+                try {
+                    const result = await deleteProductAction(id);
+                    if (result.success) {
+                        setProducts(products.filter(p => p.id !== id));
+                        toast.success("Produit supprimé avec succès");
+                    } else {
+                        toast.error(result.error || "Erreur lors de la suppression");
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                }
+            }
+        });
     };
 
     return (
@@ -327,6 +362,36 @@ export default function FarmerProductsPage() {
                 }}
                 product={selectedProduct}
             />
+
+            <AlertDialog open={confirmConfig.isOpen} onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-[400px]">
+                    <div className="h-1.5 bg-gradient-to-r from-red-500 to-orange-500" />
+                    <div className="p-8 space-y-6">
+                        <AlertDialogHeader>
+                            <div className="size-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-2">
+                                <AlertCircle className="size-6 text-red-600" />
+                            </div>
+                            <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                {confirmConfig.title}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium text-slate-500 leading-relaxed">
+                                {confirmConfig.description}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex gap-3 sm:gap-3">
+                            <AlertDialogCancel className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] hover:bg-slate-50">
+                                Annuler
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={confirmConfig.onConfirm}
+                                className="flex-1 h-12 rounded-2xl bg-red-600 text-white hover:bg-red-700 font-bold uppercase tracking-wider text-[11px] shadow-lg shadow-red-200 transition-all active:scale-[0.98]"
+                            >
+                                Supprimer
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     );
 }

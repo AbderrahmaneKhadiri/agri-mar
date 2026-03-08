@@ -8,6 +8,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, X, Building2, Calendar, ChevronDown, MoreHorizontal, Eye, Clock, ShieldCheck, Loader2, Search, MessageSquare, MapPin } from "lucide-react";
 import { respondConnectionAction } from "@/actions/networking.actions";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -56,6 +68,20 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
     const [selectedIndustry, setSelectedIndustry] = useState("all");
     const [selectedLocation, setSelectedLocation] = useState("all");
     const [selectedStatus, setSelectedStatus] = useState("PENDING");
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+        confirmText?: string;
+        variant?: "destructive" | "default" | "success";
+        icon?: React.ElementType;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+    });
 
     // Memoize unique filters
     const uniqueIndustries = Array.from(new Set(requests.map(r => r.senderIndustry).filter(Boolean)));
@@ -71,15 +97,28 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
     });
 
     const handleAction = async (connectionId: string, status: "ACCEPTED" | "REJECTED") => {
-        setIsProcessing(connectionId);
-        const result = await respondConnectionAction({ connectionId, response: status });
+        setConfirmConfig({
+            isOpen: true,
+            title: status === "ACCEPTED" ? "Accepter la demande ?" : "Refuser la demande ?",
+            description: status === "ACCEPTED"
+                ? "En acceptant, cette entreprise pourra accéder à vos données d'exploitation et vous envoyer des propositions."
+                : "Voulez-vous vraiment refuser cette demande de connexion ? Cette action est irréversible.",
+            confirmText: status === "ACCEPTED" ? "Accepter" : "Refuser",
+            variant: status === "ACCEPTED" ? "success" : "destructive",
+            icon: status === "ACCEPTED" ? ShieldCheck : X,
+            onConfirm: async () => {
+                setIsProcessing(connectionId);
+                const result = await respondConnectionAction({ connectionId, response: status });
 
-        if (result.error) {
-            alert(result.error);
-        } else {
-            setRequests(prev => prev.map(r => r.id === connectionId ? { ...r, status } : r));
-        }
-        setIsProcessing(null);
+                if (result.error) {
+                    toast.error(result.error);
+                } else {
+                    setRequests(prev => prev.map(r => r.id === connectionId ? { ...r, status } : r));
+                    toast.success(status === "ACCEPTED" ? "Demande acceptée" : "Demande refusée");
+                }
+                setIsProcessing(null);
+            }
+        });
     };
 
     const handleViewProfile = (request: IncomingRequestDTO) => {
@@ -224,15 +263,26 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                                     <TableCell className="text-right pr-4 py-2">
                                         <div className="flex items-center justify-end gap-1">
                                             {request.status === "PENDING" && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleAction(request.id, "ACCEPTED")}
-                                                    disabled={!!isProcessing}
-                                                    className="h-7 px-2.5 bg-[#2c5f42] text-white border-none hover:bg-[#2c5f42]/90 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-lg"
-                                                >
-                                                    {isProcessing === request.id ? <Loader2 className="size-3 animate-spin" /> : "Autoriser"}
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleAction(request.id, "ACCEPTED")}
+                                                        disabled={!!isProcessing}
+                                                        className="h-7 px-2.5 bg-[#2c5f42] text-white border-none hover:bg-[#2c5f42]/90 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-lg"
+                                                    >
+                                                        {isProcessing === request.id ? <Loader2 className="size-3 animate-spin" /> : "Accepter"}
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleAction(request.id, "REJECTED")}
+                                                        disabled={!!isProcessing}
+                                                        className="h-7 px-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 text-[10px] font-bold uppercase tracking-wider rounded-lg"
+                                                    >
+                                                        Refuser
+                                                    </Button>
+                                                </>
                                             )}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -368,6 +418,66 @@ export function FarmerRequestsClient({ initialRequests }: { initialRequests: Inc
                     )}
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={confirmConfig.isOpen} onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-[400px]">
+                    <div className={cn(
+                        "h-1.5 bg-gradient-to-r",
+                        confirmConfig.variant === "destructive" ? "from-red-500 to-orange-500" :
+                            confirmConfig.variant === "success" ? "from-emerald-500 to-teal-500" : "from-slate-500 to-slate-700"
+                    )} />
+                    <div className="p-8 space-y-6">
+                        <AlertDialogHeader>
+                            <div className={cn(
+                                "size-12 rounded-2xl border flex items-center justify-center mb-2",
+                                confirmConfig.variant === "destructive" ? "bg-red-50 border-red-100" :
+                                    confirmConfig.variant === "success" ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"
+                            )}>
+                                {confirmConfig.icon ? (
+                                    <confirmConfig.icon className={cn(
+                                        "size-6",
+                                        confirmConfig.variant === "destructive" ? "text-red-600" :
+                                            confirmConfig.variant === "success" ? "text-emerald-600" : "text-slate-600"
+                                    )} />
+                                ) : (
+                                    <AlertCircle className={cn(
+                                        "size-6",
+                                        confirmConfig.variant === "destructive" ? "text-red-600" : "text-slate-600"
+                                    )} />
+                                )}
+                            </div>
+                            <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                {confirmConfig.title}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium text-slate-500 leading-relaxed">
+                                {confirmConfig.description}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex gap-3 sm:gap-3">
+                            <AlertDialogCancel className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] hover:bg-slate-50 shadow-none">
+                                Annuler
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    confirmConfig.onConfirm();
+                                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                                }}
+                                className={cn(
+                                    "flex-1 h-12 rounded-2xl font-bold uppercase tracking-wider text-[11px] shadow-lg transition-all active:scale-[0.98]",
+                                    confirmConfig.variant === "destructive"
+                                        ? "bg-red-600 text-white hover:bg-red-700 shadow-red-200"
+                                        : confirmConfig.variant === "success"
+                                            ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
+                                            : "bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 shadow-slate-200"
+                                )}
+                            >
+                                {confirmConfig.confirmText || "Confirmer"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

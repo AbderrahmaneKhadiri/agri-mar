@@ -59,6 +59,18 @@ export async function getCompanyTenders(companyId: string) {
     return Array.from(tenderMap.values());
 }
 
+export async function deleteTender(id: string, companyId: string) {
+    const [deleted] = await db.delete(tenders)
+        .where(
+            and(
+                eq(tenders.id, id),
+                eq(tenders.companyId, companyId)
+            )
+        )
+        .returning();
+    return deleted;
+}
+
 export async function getOpenTenders(filters?: { category?: string, search?: string }) {
     const conditions = [eq(tenders.status, "OPEN")];
 

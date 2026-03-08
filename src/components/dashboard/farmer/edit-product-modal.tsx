@@ -10,6 +10,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import {
     Form,
@@ -195,6 +196,9 @@ export function EditProductModal({ isOpen, onOpenChange, product, onSuccess }: E
                             </div>
                             Modifier le Produit
                         </DialogTitle>
+                        <DialogDescription className="text-sm font-medium text-[#4a8c5c]/70">
+                            Mettez à jour les informations de votre produit (prix, stock, images).
+                        </DialogDescription>
                     </DialogHeader>
 
                     {/* Multi-Image Upload Grid */}

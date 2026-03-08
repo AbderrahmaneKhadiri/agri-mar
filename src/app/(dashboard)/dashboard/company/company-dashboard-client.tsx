@@ -50,6 +50,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { calculateCompanyScore } from "@/lib/utils/profile-score";
 
 interface CompanyProfile {
@@ -127,7 +128,7 @@ export function CompanyDashboardClient({
         });
 
         if (result.error) {
-            alert(result.error);
+            toast.error(result.error);
             setIsContacting(null);
         } else {
             router.push(`/dashboard/company/messages`);

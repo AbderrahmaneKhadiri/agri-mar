@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -76,7 +79,10 @@ export function PartnerProfileModal({ isOpen, onOpenChange, partner }: PartnerPr
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl p-0 overflow-hidden border border-[#d4e9dc] shadow-2xl rounded-2xl max-h-[92vh] flex flex-col">
-                {/* Header Banner */}
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Profil de {partner.name}</DialogTitle>
+                    <DialogDescription>Détails complets du partenaire agricole</DialogDescription>
+                </DialogHeader>
                 <div className="bg-[#2c5f42] px-6 pt-6 pb-0 relative overflow-hidden shrink-0">
                     <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
                     <div className="absolute right-8 bottom-0 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />

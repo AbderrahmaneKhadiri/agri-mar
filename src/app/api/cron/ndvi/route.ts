@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/persistence/db";
 import { parcels } from "@/persistence/schema";
-import { getHistoricalNDVIAction } from "@/actions/agromonitoring.actions";
+import { getHistoricalIndexAction } from "@/actions/agromonitoring.actions";
 import { createNotification } from "@/data-access/notifications.dal";
 
 /**
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
             if (!parcel.polygonId || parcel.polygonId === "WAITING_API_SYNC") continue;
 
             // Fetch NDVI Data 
-            const ndviResponse = await getHistoricalNDVIAction(parcel.polygonId);
+            const ndviResponse = await getHistoricalIndexAction(parcel.polygonId, "ndvi");
             const dataP = ndviResponse.data;
 
             if (dataP && dataP.length > 0) {

@@ -8,7 +8,7 @@ import { getAcceptedPartners, getOutgoingRequests } from "@/data-access/connecti
 import { getMarketplaceProducts, getMarketChartData } from "@/data-access/products.dal";
 import { getCompanyTenders } from "@/data-access/tenders.dal";
 import { getFarmersList } from "@/data-access/farmers.dal";
-import { getHistoricalNDVIAction } from "@/actions/agromonitoring.actions";
+import { getHistoricalIndexAction } from "@/actions/agromonitoring.actions";
 import { CompanyDashboardTabs } from "@/components/dashboard/company/company-dashboard-tabs";
 import { CompanyOverview } from "@/components/dashboard/company/company-overview";
 import { calculateCompanyScore } from "@/lib/utils/profile-score";
@@ -55,7 +55,7 @@ export default async function CompanyDashboardPage({
         suppliers.map(async (supplier) => {
             if (supplier.parcelPolygonId) {
                 try {
-                    const result = await getHistoricalNDVIAction(supplier.parcelPolygonId);
+                    const result = await getHistoricalIndexAction(supplier.parcelPolygonId, "ndvi");
                     if (result.data && result.data.length > 0) {
                         totalNdvi += result.data[result.data.length - 1].data.mean;
                         monitoredParcelsCount++;
@@ -83,7 +83,7 @@ export default async function CompanyDashboardPage({
                                 tab === "market" ? "Place de Marché" :
                                     tab === "network" ? "Mon Réseau & Monitoring" :
                                         tab === "tenders" ? "Appels d'Offres" :
-                                            tab === "requests" ? "Demandes Reçues" :
+                                            tab === "requests" ? "Suivi des Demandes" :
                                                 tab === "profile" ? "Mon Espace Business" : "Vue d'ensemble"}
                         </span>
                     </div>

@@ -28,6 +28,19 @@ import {
 } from "lucide-react";
 import { resignConnectionAction } from "@/actions/networking.actions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -112,16 +125,40 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
             return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
         });
 
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+    });
+
     const handleCancel = async (connectionId: string) => {
-        if (!confirm("Voulez-vous vraiment annuler cette demande de contrat ?")) return;
-        setIsProcessing(connectionId);
-        const result = await resignConnectionAction(connectionId);
-        if (result.error) {
-            alert(result.error);
-        } else {
-            setRequests(prev => prev.filter(r => r.id !== connectionId));
-        }
-        setIsProcessing(null);
+        setConfirmConfig({
+            isOpen: true,
+            title: "Annuler la demande ?",
+            description: "Voulez-vous vraiment annuler cette demande de contrat ? Cette action retirera votre proposition de la liste de l'agriculteur.",
+            onConfirm: async () => {
+                setIsProcessing(connectionId);
+                try {
+                    const result = await resignConnectionAction(connectionId);
+                    if (result.error) {
+                        toast.error(result.error);
+                    } else {
+                        setRequests(prev => prev.filter(r => r.id !== connectionId));
+                        toast.success("Demande annulée avec succès");
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                } finally {
+                    setIsProcessing(null);
+                }
+            }
+        });
     };
 
     const handleViewProfile = (request: IncomingRequestDTO) => {
@@ -316,6 +353,35 @@ export function CompanyRequestsClient({ initialRequests }: { initialRequests: In
                     } : null}
                 />
             </div>
+            <AlertDialog open={confirmConfig.isOpen} onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-[400px]">
+                    <div className="h-1.5 bg-gradient-to-r from-red-500 to-orange-500" />
+                    <div className="p-8 space-y-6">
+                        <AlertDialogHeader>
+                            <div className="size-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-2">
+                                <AlertCircle className="size-6 text-red-600" />
+                            </div>
+                            <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                {confirmConfig.title}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium text-slate-500 leading-relaxed">
+                                {confirmConfig.description}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex gap-3 sm:gap-3">
+                            <AlertDialogCancel className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] hover:bg-slate-50">
+                                Annuler
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={confirmConfig.onConfirm}
+                                className="flex-1 h-12 rounded-2xl bg-red-600 text-white hover:bg-red-700 font-bold uppercase tracking-wider text-[11px] shadow-lg shadow-red-200 transition-all active:scale-[0.98]"
+                            >
+                                Confirmer
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

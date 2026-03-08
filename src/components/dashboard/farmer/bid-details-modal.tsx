@@ -5,6 +5,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ export function BidDetailsModal({ isOpen, onOpenChange, bid }: BidDetailsModalPr
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-lg border-none shadow-2xl rounded-3xl p-0 bg-white overflow-hidden">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Détails de la Proposition</DialogTitle>
+                    <DialogDescription>Informations complètes sur votre offre commerciale</DialogDescription>
+                </DialogHeader>
                 <div className="h-1.5 bg-gradient-to-r from-[#d4e9dc] to-[#a8d5be]" />
 
                 <div className="p-8 space-y-6">

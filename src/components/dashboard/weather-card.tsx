@@ -38,11 +38,11 @@ const getWeatherIcon = (code: string) => {
 export function WeatherCard({ current, forecast, locationName, isSyncing }: WeatherCardProps) {
     if (isSyncing) {
         return (
-            <Card className="border-none shadow-sm bg-slate-50 overflow-hidden rounded-[2rem] min-h-[160px] flex flex-col justify-center">
+            <Card className="border-white/5 shadow-2xl bg-[#070b14] overflow-hidden rounded-xl min-h-[160px] flex flex-col justify-center">
                 <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-                    <Loader2 className="size-12 text-[#4a8c5c] mb-4 animate-spin" />
-                    <h3 className="font-bold text-slate-900">Météo : Synchronisation Satellite...</h3>
-                    <p className="text-[12px] text-slate-400 mt-1">Récupération des données ultra-locales en cours. Cela peut prendre quelques secondes.</p>
+                    <Loader2 className="size-12 text-[#10b981] mb-4 animate-spin" />
+                    <h3 className="font-bold text-white uppercase tracking-widest text-xs">Météo : Synchronisation...</h3>
+                    <p className="text-[10px] text-white/40 mt-2 uppercase tracking-wider">Récupération des données Sentinel-2.</p>
                 </CardContent>
             </Card>
         );
@@ -50,11 +50,11 @@ export function WeatherCard({ current, forecast, locationName, isSyncing }: Weat
 
     if (!current) {
         return (
-            <Card className="border-none shadow-sm bg-slate-50 overflow-hidden rounded-[2rem] min-h-[160px] flex flex-col justify-center">
+            <Card className="border-white/5 shadow-2xl bg-[#070b14] overflow-hidden rounded-xl min-h-[160px] flex flex-col justify-center">
                 <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-                    <Cloud className="size-12 text-slate-200 mb-4" />
-                    <h3 className="font-bold text-slate-900">Météo temporairement indisponible</h3>
-                    <p className="text-[12px] text-slate-400 mt-1">L&apos;API satellite met du temps à répondre. Rafraîchissez la page dans quelques instants.</p>
+                    <Cloud className="size-12 text-white/5 mb-4" />
+                    <h3 className="font-bold text-white/60 uppercase tracking-widest text-xs">Indisponible</h3>
+                    <p className="text-[10px] text-white/30 mt-2 uppercase tracking-wider">L&apos;API satellite est en attente.</p>
                 </CardContent>
             </Card>
         );
@@ -66,7 +66,7 @@ export function WeatherCard({ current, forecast, locationName, isSyncing }: Weat
     return (
         <Card className="border border-border shadow-sm bg-white overflow-hidden rounded-xl relative group">
             {/* Glossy accent */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#2c5f42]/5 blur-[100px] -mr-32 -mt-32" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#2c5f42]/5 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
 
             <CardContent className="p-5 relative z-10">
                 <div className="flex justify-between items-start mb-8">
@@ -86,8 +86,8 @@ export function WeatherCard({ current, forecast, locationName, isSyncing }: Weat
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50/50 p-4 rounded-3xl border border-white/40 flex items-center gap-3">
-                        <div className="size-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#4a8c5c]">
+                    <div className="bg-slate-50/50 p-4 rounded-3xl border border-white/40 flex items-center gap-3 transition-colors hover:bg-slate-50">
+                        <div className="size-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#2c5f42]">
                             <Droplets className="size-4" />
                         </div>
                         <div>
@@ -95,7 +95,7 @@ export function WeatherCard({ current, forecast, locationName, isSyncing }: Weat
                             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Humidité</div>
                         </div>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-3xl border border-white/40 flex items-center gap-3">
+                    <div className="bg-slate-50/50 p-4 rounded-3xl border border-white/40 flex items-center gap-3 transition-colors hover:bg-slate-50">
                         <div className="size-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500">
                             <Wind className="size-4" />
                         </div>
@@ -112,14 +112,12 @@ export function WeatherCard({ current, forecast, locationName, isSyncing }: Weat
                             {forecast.slice(0, 4).map((day, idx) => (
                                 <div key={idx} className="flex flex-col items-center gap-2">
                                     <span className="text-[11px] font-bold text-slate-400 uppercase">
-                                        {idx === 0 ? "Demain" : format(new Date(day.dt * 1000), "EEE", { locale: fr })}
+                                        {idx === 0 ? "Dem" : format(new Date(day.dt * 1000), "iii", { locale: fr })}
                                     </span>
-                                    <div className="size-10 rounded-2xl bg-slate-50 flex items-center justify-center">
+                                    <div className="size-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600">
                                         {getWeatherIcon(day.weather[0].id.toString())}
                                     </div>
-                                    <span className="text-[13px] font-black text-slate-900">
-                                        {Math.round(day.main.temp - 273.15)}°
-                                    </span>
+                                    <span className="text-[12px] font-black text-slate-900">{Math.round(day.main.temp - 273.15)}°</span>
                                 </div>
                             ))}
                         </div>

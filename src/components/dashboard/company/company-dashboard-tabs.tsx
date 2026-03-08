@@ -37,7 +37,10 @@ import {
     Factory,
     Scale,
     Users,
-    Activity
+    Activity,
+    Trash2,
+    ShieldAlert,
+    Loader2
 } from "lucide-react";
 import {
     Table,
@@ -47,6 +50,16 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
@@ -62,11 +75,14 @@ import { SoilCard } from "@/components/dashboard/soil-card";
 import { getFarmerAnalyticsAction } from "@/actions/agromonitoring.actions";
 import { CreateTenderModal } from "@/components/dashboard/company/create-tender-modal";
 import { ViewBidsModal } from "@/components/dashboard/company/view-bids-modal";
+import { deleteTenderAction } from "@/actions/tenders.actions";
 import { ProductDetailModal } from "@/components/dashboard/company/product-detail-modal";
 import { initiateProductInquiryAction } from "@/actions/contact-direct.actions";
 import { toast } from "sonner";
+import { SupplierTableClient } from "@/components/dashboard/company/supplier-table-client";
 import { FarmerNetworkClient } from "@/components/dashboard/company/farmer-network-client";
 import { SupplierProfileDetail } from "@/components/dashboard/company/supplier-profile-detail";
+import { CompanyRequestsTable } from "@/components/dashboard/company/company-requests-table";
 import { FarmerListDTO } from "@/data-access/farmers.dal";
 
 interface CompanyDashboardTabsProps {
@@ -115,6 +131,8 @@ export function CompanyDashboardTabs({
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [isContacting, setIsContacting] = useState<string | null>(null);
+    const [isDeletingTender, setIsDeletingTender] = useState(false);
+    const [tenderToDelete, setTenderToDelete] = useState<TenderSelectDTO | null>(null);
 
     // Market-specific filters
     const [marketCategory, setMarketCategory] = useState("all");
@@ -207,6 +225,19 @@ export function CompanyDashboardTabs({
         setSelectedSupplierProfile(supplier);
     };
 
+    const handleDeleteTender = async (tenderId: string) => {
+        setIsDeletingTender(true);
+        const result = await deleteTenderAction(tenderId);
+        setIsDeletingTender(false);
+        setTenderToDelete(null);
+
+        if (result.success) {
+            toast.success("Appel d'offre supprimé avec succès");
+        } else {
+            toast.error(result.error || "Une erreur est survenue lors de la suppression");
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-border pb-4 mt-2">
@@ -217,7 +248,7 @@ export function CompanyDashboardTabs({
                         {activeTab === "monitoring" && "Sourcing & Monitoring"}
                         {activeTab === "market" && "Place de Marché"}
                         {activeTab === "tenders" && "Appels d'Offres"}
-                        {activeTab === "requests" && "Demandes Reçues"}
+                        {activeTab === "requests" && "Suivi des Demandes"}
                         {activeTab === "profile" && "Mon Espace Business"}
                     </h2>
                     {activeTab === "tenders" && (
@@ -359,72 +390,7 @@ export function CompanyDashboardTabs({
 
                 {/* Suppliers Tab */}
                 <TabsContent value="suppliers" className="m-0">
-                    {selectedSupplierProfile ? (
-                        <SupplierProfileDetail
-                            supplier={selectedSupplierProfile}
-                            onBack={() => setSelectedSupplierProfile(null)}
-                        />
-                    ) : (
-                        <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
-                            <Table>
-                                <TableHeader className="bg-[#f8fdf9]">
-                                    <TableRow className="border-border hover:bg-transparent h-10">
-                                        <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight pl-4">Partenaire</TableHead>
-                                        <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Depuis le</TableHead>
-                                        <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Status</TableHead>
-                                        <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Localisation</TableHead>
-                                        <TableHead className="text-right pr-4"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredSuppliers.length === 0 ? (
-                                        <TableRow><TableCell colSpan={4} className="h-40 text-center text-slate-400 italic font-medium text-[12px]">Aucun fournisseur partenaire.</TableCell></TableRow>
-                                    ) : filteredSuppliers.map((s) => (
-                                        <TableRow
-                                            key={s.id}
-                                            className="border-slate-50 hover:bg-slate-50/20 h-14 cursor-pointer"
-                                            onClick={() => handleSupplierClick(s)}
-                                        >
-                                            <TableCell className="pl-4 py-2">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="size-8 rounded-lg ring-1 ring-slate-100">
-                                                        <AvatarImage src={s.avatarUrl || ""} />
-                                                        <AvatarFallback className="text-[10px] font-bold bg-slate-50 text-slate-400">{s.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-[13px] text-slate-900">{s.name}</span>
-                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Producteur Partenaire</span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-[12px] text-slate-500 font-bold tabular-nums">
-                                                {format(new Date(s.since), "d MMM yyyy", { locale: fr })}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="bg-[#f0f8f4] text-[#2c5f42] border-[#c4dece] text-[10px] font-bold rounded-md px-2 py-0.5 uppercase tracking-wider">Actif</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-[12px] text-slate-500 font-bold">
-                                                <div className="flex items-center gap-1.5"><MapPin className="size-3 opacity-40 text-slate-400" /> {s.location}</div>
-                                            </TableCell>
-                                            <TableCell className="text-right pr-4">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleSupplierClick(s);
-                                                    }}
-                                                    className="h-8 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-wider"
-                                                >
-                                                    Profil <ArrowUpRightIcon className="size-3 ml-1" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
+                    <SupplierTableClient initialSuppliers={initialSuppliers} />
                 </TabsContent>
                 {/* Sourcing & Monitoring Tab */}
                 <TabsContent value="monitoring" className="m-0 space-y-6">
@@ -624,17 +590,31 @@ export function CompanyDashboardTabs({
                                             {format(new Date(t.deadline), "d MMM yyyy", { locale: fr })}
                                         </TableCell>
                                         <TableCell className="text-right pr-4">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedTender(t);
-                                                    setIsViewBidsModalOpen(true);
-                                                }}
-                                                className="h-8 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-wider"
-                                            >
-                                                Gérer <ArrowUpRightIcon className="size-3 ml-1" />
-                                            </Button>
+                                            <div className="flex justify-end items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedTender(t);
+                                                        setIsViewBidsModalOpen(true);
+                                                    }}
+                                                    className="h-8 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-wider"
+                                                >
+                                                    Gérer <ArrowUpRightIcon className="size-3 ml-1" />
+                                                </Button>
+
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setTenderToDelete(t);
+                                                    }}
+                                                    className="h-8 w-8 p-0 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -644,54 +624,8 @@ export function CompanyDashboardTabs({
                 </TabsContent>
 
                 {/* Requests/Proposals Tab */}
-                <TabsContent value="requests" className="border border-border rounded-xl bg-white overflow-hidden shadow-sm m-0 text-left">
-                    <Table>
-                        <TableHeader className="bg-[#f8fdf9]">
-                            <TableRow className="border-border hover:bg-transparent h-10">
-                                <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight pl-4">Expéditeur</TableHead>
-                                <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Type</TableHead>
-                                <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Status</TableHead>
-                                <TableHead className="text-[11px] font-bold text-[#2c5f42] uppercase tracking-tight">Date</TableHead>
-                                <TableHead className="text-right pr-4 font-bold"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredRequests.length === 0 ? (
-                                <TableRow><TableCell colSpan={5} className="h-40 text-center text-slate-400 italic font-medium text-[12px]">Aucune demande en attente.</TableCell></TableRow>
-                            ) : filteredRequests.map((r) => (
-                                <TableRow key={r.id} className="border-slate-50 hover:bg-slate-50/20 h-14">
-                                    <TableCell className="pl-4 py-2">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="size-8 rounded-lg ring-1 ring-slate-100">
-                                                <AvatarImage src={r.senderLogo || ""} />
-                                                <AvatarFallback className="text-[10px] bg-slate-50">{r.senderName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-[13px] text-slate-900">{r.senderName}</span>
-                                                <span className="text-[10px] text-slate-400 font-medium">{r.location || "Producteur Agricole"}</span>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md border-none px-2 py-0.5">
-                                            PARTENARIAT
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="bg-[#f0f8f4] text-[#2c5f42] border-[#c4dece] text-[10px] font-bold rounded-full px-2 py-0.5">EN COURS</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-[12px] text-slate-500 font-bold tabular-nums">
-                                        {format(new Date(r.sentAt), "d MMM yyyy", { locale: fr })}
-                                    </TableCell>
-                                    <TableCell className="text-right pr-4">
-                                        <Button asChild variant="ghost" size="sm" className="h-8 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-wider">
-                                            <a href="/dashboard/company/requests">Détails</a>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                <TabsContent value="requests" className="m-0">
+                    <CompanyRequestsTable initialRequests={initialRequests} />
                 </TabsContent>
 
                 {/* Profile Tab */}
@@ -860,6 +794,39 @@ export function CompanyDashboardTabs({
                 onOpenChange={setIsViewBidsModalOpen}
                 tender={selectedTender}
             />
+
+            {/* Delete Tender Confirmation Modal */}
+            <AlertDialog open={!!tenderToDelete} onOpenChange={(open) => !open && setTenderToDelete(null)}>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-md">
+                    <div className="h-2 bg-red-400 w-full" />
+                    <div className="p-8">
+                        <AlertDialogHeader className="text-left">
+                            <div className="size-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-6">
+                                <ShieldAlert className="size-6" />
+                            </div>
+                            <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                Supprimer cet appel d&apos;offre ?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-500 text-[14px] leading-relaxed pt-2">
+                                Voulez-vous vraiment supprimer l&apos;appel d&apos;offre <strong className="text-slate-900">{tenderToDelete?.title}</strong> ?
+                                <br /><br />
+                                Cette action est irréversible. Toutes les propositions reçues pour cet appel d&apos;offre seront également supprimées.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-8 gap-3 sm:gap-0">
+                            <AlertDialogCancel className="h-11 rounded-xl border-slate-100 text-slate-500 font-bold text-[12px] uppercase tracking-wider hover:bg-slate-50 hover:text-slate-900 transition-all flex-1 sm:flex-none">
+                                Garder l&apos;offre
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={() => tenderToDelete && handleDeleteTender(tenderToDelete.id)}
+                                className="h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-[12px] uppercase tracking-wider shadow-lg shadow-red-500/20 transition-all border-none flex-1 sm:flex-none"
+                            >
+                                {isDeletingTender ? <Loader2 className="size-4 animate-spin" /> : "Confirmer la suppression"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
 
         </div>
     );

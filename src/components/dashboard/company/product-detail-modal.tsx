@@ -4,15 +4,17 @@ import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
+    DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { getHistoricalNDVIAction } from "@/actions/agromonitoring.actions";
-import { NdviChart } from "@/components/dashboard/ndvi-chart";
+import { getHistoricalIndexAction } from "@/actions/agromonitoring.actions";
+import { AgroAnalyticsChart } from "@/components/dashboard/agro-analytics-chart";
 import {
     MapPin,
     PackageOpen,
@@ -59,7 +61,7 @@ export function ProductDetailModal({
             const polygonId = product?.farmer?.parcels?.[0]?.polygonId;
             if (isOpen && polygonId && polygonId !== "WAITING_API_SYNC") {
                 setIsLoadingNdvi(true);
-                const { data } = await getHistoricalNDVIAction(polygonId);
+                const { data } = await getHistoricalIndexAction(polygonId, "ndvi");
                 setNdviData(data);
                 setIsLoadingNdvi(false);
             }
@@ -164,6 +166,9 @@ export function ProductDetailModal({
                             <DialogTitle className="text-2xl font-black text-[#2c5f42] tracking-tight leading-tight">
                                 {product.name}
                             </DialogTitle>
+                            <DialogDescription className="text-[12px] font-medium text-[#4a8c5c]/60">
+                                Détails techniques et commerciaux du produit agricole sélectionné.
+                            </DialogDescription>
                         </div>
 
                         {/* Price & Stock */}
@@ -249,7 +254,7 @@ export function ProductDetailModal({
                                             <span className="text-[12px] font-medium text-[#4a8c5c]">Scan satellite en cours...</span>
                                         </div>
                                     ) : (
-                                        <NdviChart data={ndviData} />
+                                        <AgroAnalyticsChart initialData={ndviData} polygonId={product.farmer?.parcels?.[0]?.polygonId} />
                                     )}
                                 </div>
                             </div>

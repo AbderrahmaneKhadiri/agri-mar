@@ -3,13 +3,21 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap, Plus, ShoppingBag, Sprout, Users, Trash2, UserMinus, Eye, Pencil, Trash } from "lucide-react";
+import { Search, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap, Plus, ShoppingBag, Sprout, Users, Trash2, UserMinus, Eye, Pencil, Trash, Activity, Thermometer, CloudRain, Sun, MessageSquare, Check, X, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -18,9 +26,11 @@ import Image from "next/image";
 import { BidTenderModal } from "@/components/dashboard/farmer/bid-tender-modal";
 import { HarvestPlanning } from "@/components/dashboard/farmer/harvest-planning";
 import { ExpenseTracker } from "@/components/dashboard/farmer/expense-tracker";
-import { NdviChart } from "@/components/dashboard/ndvi-chart";
+import { AgroAnalyticsChart } from "@/components/dashboard/agro-analytics-chart";
 import { WeatherCard } from "@/components/dashboard/weather-card";
 import { SoilCard } from "@/components/dashboard/soil-card";
+import { AdvancedInsightsGrid } from "@/components/dashboard/advanced-insights-grid";
+import { SatelliteVisionCard } from "@/components/dashboard/satellite-vision-card";
 import { TenderSelectDTO, TenderBidSelectDTO } from "@/data-access/tenders.dal";
 import { HarvestPlanSelectDTO } from "@/data-access/harvests.dal";
 import { IncomingRequestDTO, PartnerDTO } from "@/data-access/connections.dal";
@@ -30,14 +40,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { calculateFarmerScore } from "@/lib/utils/profile-score";
 import { DirectProposalModal } from "@/components/dashboard/farmer/direct-proposal-modal";
 import { PartnerProfileModal } from "@/components/dashboard/farmer/partner-profile-modal";
-import { resignConnectionAction } from "@/actions/networking.actions";
+import { resignConnectionAction, respondConnectionAction } from "@/actions/networking.actions";
 import { toast } from "sonner";
 import { AddProductModal } from "@/components/dashboard/farmer/add-product-modal";
 import { EditProductModal } from "@/components/dashboard/farmer/edit-product-modal";
 import { syncCatalogWithHarvestsAction, deleteProductAction } from "@/actions/products.actions";
 import { deleteBidAction } from "@/actions/tenders.actions";
 import { BidDetailsModal } from "@/components/dashboard/farmer/bid-details-modal";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface FarmerDashboardTabsProps {
     profile: any;
@@ -55,6 +75,10 @@ interface FarmerDashboardTabsProps {
     weatherForecast?: any;
     soilData?: any;
     isSyncing?: boolean;
+    polygonId?: string;
+    satelliteScenes?: any[];
+    geoJson?: any;
+    advancedData?: any;
 }
 
 export function FarmerDashboardTabs({
@@ -72,7 +96,11 @@ export function FarmerDashboardTabs({
     currentWeather = null,
     weatherForecast = null,
     soilData = null,
-    isSyncing = false
+    isSyncing = false,
+    polygonId = "",
+    satelliteScenes = [],
+    geoJson = null,
+    advancedData = null
 }: FarmerDashboardTabsProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -99,20 +127,42 @@ export function FarmerDashboardTabs({
         router.push(`/dashboard/farmer?tab=${value}`, { scroll: false });
     };
 
-    const handleDeleteBid = async (bidId: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cette proposition ?")) return;
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+        confirmText?: string;
+        variant?: "destructive" | "default" | "success";
+        icon?: React.ElementType;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+    });
 
-        try {
-            const result = await deleteBidAction(bidId);
-            if (result.success) {
-                toast.success("Proposition supprimée avec succès");
-                router.refresh();
-            } else {
-                toast.error(result.error || "Erreur lors de la suppression");
+    const handleDeleteBid = async (bidId: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: "Supprimer la proposition ?",
+            description: "Cette action est irréversible. Votre proposition sera définitivement supprimée de l'appel d'offres.",
+            confirmText: "Supprimer",
+            variant: "destructive",
+            onConfirm: async () => {
+                try {
+                    const result = await deleteBidAction(bidId);
+                    if (result.success) {
+                        toast.success("Proposition supprimée avec succès");
+                        router.refresh();
+                    } else {
+                        toast.error(result.error || "Erreur lors de la suppression");
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                }
             }
-        } catch (error) {
-            toast.error("Erreur réseau");
-        }
+        });
     };
 
     const handleViewBidDetails = (bid: any) => {
@@ -120,7 +170,12 @@ export function FarmerDashboardTabs({
         setIsBidDetailsModalOpen(true);
     };
 
-    const filteredRequests = initialRequests.filter(req =>
+    const [requests, setRequests] = useState<IncomingRequestDTO[]>(initialRequests);
+    const [isProcessingRequest, setIsProcessingRequest] = useState<string | null>(null);
+    const [selectedRequest, setSelectedRequest] = useState<IncomingRequestDTO | null>(null);
+    const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+
+    const filteredRequests = requests.filter(req =>
         req.senderName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -128,9 +183,40 @@ export function FarmerDashboardTabs({
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const handleRequestAction = async (connectionId: string, status: "ACCEPTED" | "REJECTED") => {
+        setConfirmConfig({
+            isOpen: true,
+            title: status === "ACCEPTED" ? "Accepter la demande ?" : "Décliner la demande ?",
+            description: status === "ACCEPTED"
+                ? "En acceptant, cette entreprise pourra voir vos données d'exploitation et vous proposer des contrats."
+                : "Voulez-vous vraiment refuser cette demande de connexion ? Cette action est irréversible.",
+            confirmText: status === "ACCEPTED" ? "Accepter" : "Décliner",
+            variant: status === "ACCEPTED" ? "success" : "destructive",
+            icon: status === "ACCEPTED" ? ShieldCheck : X,
+            onConfirm: async () => {
+                setIsProcessingRequest(connectionId);
+                try {
+                    const result = await respondConnectionAction({ connectionId, response: status });
+                    if (result.error) {
+                        toast.error(result.error);
+                    } else {
+                        setRequests(prev => prev.map(r => r.id === connectionId ? { ...r, status } : r));
+                        toast.success(status === "ACCEPTED" ? "Demande acceptée" : "Demande refusée");
+                        router.refresh();
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                } finally {
+                    setIsProcessingRequest(null);
+                }
+            }
+        });
+    };
+
+    const handleViewRequestProfile = (request: IncomingRequestDTO) => {
+        setSelectedRequest(request);
+        setIsRequestModalOpen(true);
+    };
 
     const filteredOpenTenders = initialOpenTenders.filter(t =>
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -166,6 +252,11 @@ export function FarmerDashboardTabs({
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
     ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     // Product Detail Modal State
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -227,16 +318,45 @@ export function FarmerDashboardTabs({
 
     const handleDeleteProduct = async (productId: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-            const result = await deleteProductAction(productId);
-            if (result.success) {
-                toast.success("Produit supprimé avec succès");
-                // Refresh products list
-                setProducts(products.filter(p => p.id !== productId));
-            } else {
-                toast.error(result.error || "Erreur lors de la suppression");
+        setConfirmConfig({
+            isOpen: true,
+            title: "Supprimer du catalogue ?",
+            description: "Êtes-vous sûr de vouloir retirer ce produit de votre catalogue de vente ?",
+            confirmText: "Supprimer",
+            variant: "destructive",
+            onConfirm: async () => {
+                const result = await deleteProductAction(productId);
+                if (result.success) {
+                    toast.success("Produit supprimé avec succès");
+                    setProducts(products.filter(p => p.id !== productId));
+                } else {
+                    toast.error(result.error || "Erreur lors de la suppression");
+                }
             }
-        }
+        });
+    };
+
+    const handleResign = async (partnerId: string, partnerName: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: "Résilier le partenariat ?",
+            description: `Voulez-vous vraiment mettre fin à votre collaboration avec ${partnerName} ?`,
+            confirmText: "Résilier",
+            variant: "destructive",
+            onConfirm: async () => {
+                try {
+                    const result = await resignConnectionAction(partnerId);
+                    if (result.success) {
+                        toast.success("Partenariat résilié avec succès");
+                        router.refresh();
+                    } else {
+                        toast.error(result.error || "Erreur lors de la résiliation");
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                }
+            }
+        });
     };
 
     return (
@@ -265,57 +385,105 @@ export function FarmerDashboardTabs({
             <Tabs value={activeTab} className="mt-2">
                 <TabsContent value="requests" className="m-0">
                     {filteredRequests.length === 0 ? (
-                        <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-48 flex flex-col items-center justify-center bg-[#f8fdf9]/30">
+                        <div className="border border-dashed border-[#d4e9dc] rounded-2xl h-48 flex flex-col items-center justify-center bg-[#f8fdf9]/30 mt-4">
                             <Clock className="size-8 text-slate-200 mb-2" />
                             <p className="text-slate-400 text-[13px] font-medium">Aucune demande reçue pour le moment.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {filteredRequests.map((req) => (
-                                <Card key={req.id} className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl">
-                                    <div className="h-1 bg-[#f0f8f4]" />
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className={cn(
-                                                "flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider",
-                                                req.status === "PENDING" ? "bg-[#f0f8f4] text-[#4a8c5c]" :
-                                                    req.status === "ACCEPTED" ? "bg-[#f0f8f4] text-[#2c5f42]" :
-                                                        "bg-red-50 text-red-600"
-                                            )}>
-                                                <Clock className="size-3" />
-                                                {req.status === "PENDING" ? "En attente" : req.status === "ACCEPTED" ? "Accepté" : "Refusé"}
-                                            </div>
-                                            <span className="text-[11px] font-bold text-slate-300 tabular-nums">
-                                                {format(new Date(req.sentAt), "d MMM yyyy", { locale: fr })}
-                                            </span>
-                                        </div>
+                        <div className="space-y-6 mt-4">
+                            <div className="bg-[#f0f8f4] border border-[#d4e9dc] rounded-xl p-4 flex items-start gap-4">
+                                <div className="p-2 bg-white rounded-lg border border-[#d4e9dc]">
+                                    <Building2 className="size-5 text-[#2c5f42]" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[14px] font-bold text-[#2c5f42] mb-0.5">Vérification des Partenariats</h4>
+                                    <p className="text-[11px] text-[#4a8c5c]/80 leading-relaxed max-w-2xl">
+                                        C&apos;est ici que vous gérez les entreprises qui souhaitent collaborer avec vous.
+                                        Analysez leurs propositions et acceptez celles qui correspondent à vos objectifs pour les ajouter à vos partenaires officiels.
+                                    </p>
+                                </div>
+                            </div>
 
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <Avatar className="size-12 rounded-xl ring-4 ring-[#f8fdf9] shadow-sm transition-transform group-hover:scale-105">
-                                                <AvatarImage src={req.senderLogo || ""} className="object-cover" />
-                                                <AvatarFallback className="bg-[#f0f8f4] text-[#4a8c5c] text-base font-black uppercase">
-                                                    {req.senderName.substring(0, 2)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-[14px] text-slate-900 truncate tracking-tight group-hover:text-[#2c5f42] transition-colors">
-                                                    {req.senderName}
-                                                </h4>
-                                                <p className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-widest mt-0.5">
-                                                    Partenariat Direct
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <Button asChild className="w-full h-10 rounded-xl bg-[#f0f8f4] hover:bg-[#2c5f42] hover:text-white text-[#2c5f42] font-bold border-none transition-all duration-300 group/btn shadow-none">
-                                            <Link href="/dashboard/farmer/requests" className="flex items-center justify-center gap-2">
-                                                <span className="text-[11px] uppercase tracking-widest">Détails de la demande</span>
-                                                <ArrowUpRightIcon className="size-3 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                                            </Link>
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                            <div className="border border-[#d4e9dc] rounded-2xl bg-white overflow-hidden shadow-sm">
+                                <Table>
+                                    <TableHeader className="bg-[#f8fdf9]">
+                                        <TableRow className="border-[#d4e9dc] hover:bg-transparent h-10">
+                                            <TableHead className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-tight pl-6">Entreprise</TableHead>
+                                            <TableHead className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-tight">Secteur</TableHead>
+                                            <TableHead className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-tight">Date</TableHead>
+                                            <TableHead className="text-[11px] font-bold text-[#4a8c5c] uppercase tracking-tight">État</TableHead>
+                                            <TableHead className="w-[100px]"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredRequests.map((req) => (
+                                            <TableRow key={req.id} className="border-[#f0f8f4] hover:bg-[#f8fdf9]/30 h-14 group transition-colors">
+                                                <TableCell className="pl-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="size-9 rounded-xl ring-2 ring-[#f0f8f4]">
+                                                            <AvatarImage src={req.senderLogo || ""} />
+                                                            <AvatarFallback className="text-[10px] font-bold bg-[#f0f8f4] text-[#2c5f42] uppercase">
+                                                                {req.senderName?.charAt(0)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="font-bold text-[13px] text-slate-900 group-hover:text-[#2c5f42] transition-colors">{req.senderName}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-[12px] text-slate-500 font-medium">
+                                                    <Badge variant="secondary" className="bg-[#f0f8f4] text-[#4a8c5c] border-none text-[9px] font-bold uppercase tracking-wider">
+                                                        {req.senderIndustry || "Secteur non spécifié"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-[12px] font-bold text-slate-400 tabular-nums">
+                                                    {format(new Date(req.sentAt), "d MMM yyyy", { locale: fr })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className={cn(
+                                                        "flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider w-fit",
+                                                        req.status === "PENDING" ? "bg-[#f0f8f4] text-[#4a8c5c]" :
+                                                            req.status === "ACCEPTED" ? "bg-emerald-50 text-emerald-600" :
+                                                                "bg-red-50 text-red-600"
+                                                    )}>
+                                                        {req.status === "PENDING" ? "En attente" : req.status === "ACCEPTED" ? "Accepté" : "Refusé"}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="pr-6">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {req.status === "PENDING" && (
+                                                            <>
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleRequestAction(req.id, "ACCEPTED")}
+                                                                    disabled={!!isProcessingRequest}
+                                                                    className="h-8 px-3 bg-[#2c5f42] text-white border-none hover:bg-[#2c5f42]/90 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-none transition-all"
+                                                                >
+                                                                    {isProcessingRequest === req.id ? <RefreshCw className="size-3 animate-spin" /> : "Accepter"}
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() => handleRequestAction(req.id, "REJECTED")}
+                                                                    disabled={!!isProcessingRequest}
+                                                                    className="h-8 px-3 text-red-600 hover:bg-red-50 hover:text-red-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
+                                                                >
+                                                                    Décliner
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleViewRequestProfile(req)}
+                                                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                                                            title="Voir les détails"
+                                                        >
+                                                            <Eye className="size-4" />
+                                                        </button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     )}
                 </TabsContent>
@@ -330,7 +498,7 @@ export function FarmerDashboardTabs({
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {filteredPartners.map((partner) => (
                                 <Card key={partner.id} className="group border border-[#d4e9dc] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white overflow-hidden rounded-2xl">
-                                    <div className="h-1.5 bg-gradient-to-r from-[#d4e9dc] to-[#a8d5be]" />
+                                    <div className="h-1.5 bg-[#2c5f42]" />
                                     <CardContent className="p-6 relative">
                                         <div className="flex items-start gap-4 mb-6">
                                             <Avatar className="size-14 rounded-xl ring-4 ring-[#f8fdf9] shadow-sm transition-transform group-hover:scale-105">
@@ -349,6 +517,15 @@ export function FarmerDashboardTabs({
                                                     </Badge>
                                                 </div>
                                             </div>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="size-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                onClick={() => handleResign(partner.id, partner.name)}
+                                                title="Résilier le partenariat"
+                                            >
+                                                <UserMinus className="size-4" />
+                                            </Button>
                                         </div>
 
                                         <div className="space-y-3 mb-6">
@@ -668,18 +845,78 @@ export function FarmerDashboardTabs({
                     <ExpenseTracker initialExpenses={initialExpenses} harvestPlans={initialHarvestPlans} />
                 </TabsContent>
                 <TabsContent value="land" className="m-0 space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <NdviChart data={ndviData} isSyncing={isSyncing} />
+                    {/* Land Hero Banner */}
+                    <div className="rounded-[2rem] bg-[#2c5f42] px-8 py-8 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden shadow-xl shadow-[#2c5f42]/20">
+                        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+                        <div className="absolute -right-6 -bottom-10 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+
+                        <div className="flex-1 relative z-10">
+                            <p className="text-[10px] font-bold text-[#a8d5be] uppercase tracking-[3px] mb-3">Monitoring Parcelle</p>
+                            <h2 className="text-3xl font-light text-white tracking-tight leading-none mb-3">Ma Terre & Météo</h2>
+                            <p className="text-[13px] text-white/70 font-medium max-w-xl leading-relaxed">
+                                Suivez l&apos;évolution de vos cultures et les conditions climatiques en temps réel.
+                            </p>
                         </div>
-                        <div className="flex flex-col gap-6">
+
+                        <div className="flex gap-8 shrink-0 relative z-10 md:border-l md:border-white/10 md:pl-8">
+                            <div className="text-center group cursor-help">
+                                <div className="text-[28px] font-light text-[#a8d5be] tabular-nums leading-none">
+                                    {(ndviData && ndviData.length > 0) ? (ndviData[ndviData.length - 1].data?.mean?.toFixed(2) || "--") : "--"}
+                                </div>
+                                <div className="text-[9px] text-white/50 uppercase tracking-widest mt-1.5 font-bold group-hover:text-white transition-colors">NDVI Santé</div>
+                            </div>
+                            <div className="text-center group cursor-help">
+                                <div className="text-[28px] font-light text-white tabular-nums leading-none">
+                                    {advancedData?.accumulated?.temp ? `${advancedData.accumulated.temp.toFixed(0)}°` : "--"}
+                                </div>
+                                <div className="text-[9px] text-white/50 uppercase tracking-widest mt-1.5 font-bold group-hover:text-[#a8d5be] transition-colors">Cumul Temp.</div>
+                            </div>
+                            <div className="text-center group cursor-help">
+                                <div className="text-[28px] font-light text-white tabular-nums leading-none">
+                                    {advancedData?.uvi ? advancedData.uvi.toFixed(1) : "--"}
+                                </div>
+                                <div className="text-[9px] text-white/50 uppercase tracking-widest mt-1.5 font-bold group-hover:text-[#a8d5be] transition-colors">Index UV</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                        {/* Main Analysis Column (Left 3/4) */}
+                        <div className="lg:col-span-3 flex flex-col gap-6">
+                            <SatelliteVisionCard
+                                scenes={satelliteScenes}
+                                geoJson={geoJson}
+                                isSyncing={isSyncing}
+                                className="min-h-[450px]"
+                            />
+                            <AgroAnalyticsChart
+                                initialData={ndviData}
+                                polygonId={polygonId}
+                                isSyncing={isSyncing}
+                            />
+                        </div>
+
+                        {/* Sidebar (Right 1/4) */}
+                        <div className="lg:col-span-1 flex flex-col gap-4 h-full">
                             <WeatherCard
                                 current={currentWeather}
                                 forecast={weatherForecast}
                                 locationName={profile.farmLocation || "Ma Ferme"}
                                 isSyncing={isSyncing}
                             />
-                            <SoilCard data={soilData} isSyncing={isSyncing} />
+                            <AdvancedInsightsGrid
+                                accumulatedTemp={advancedData?.accumulated?.temp}
+                                accumulatedPrec={advancedData?.accumulated?.prec}
+                                uvi={advancedData?.uvi}
+                                isSyncing={isSyncing}
+                            />
+                            <div className="flex-1">
+                                <SoilCard
+                                    data={soilData}
+                                    isSyncing={isSyncing}
+                                    className="h-full"
+                                />
+                            </div>
                         </div>
                     </div>
                 </TabsContent>
@@ -998,6 +1235,158 @@ export function FarmerDashboardTabs({
                 onOpenChange={setIsBidDetailsModalOpen}
                 bid={selectedBidForDetails}
             />
+
+            <Dialog open={isRequestModalOpen} onOpenChange={setIsRequestModalOpen}>
+                <DialogContent className="max-w-[480px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Profil Acheteur</DialogTitle>
+                        <DialogDescription>Détails de l'entreprise demandant un partenariat</DialogDescription>
+                    </DialogHeader>
+                    {selectedRequest && (
+                        <>
+                            <DialogHeader className="px-8 pt-8 pb-4">
+                                <DialogDescription className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-1">
+                                    Mise en Relation
+                                </DialogDescription>
+                                <DialogTitle className="text-[22px] font-bold tracking-tight text-foreground">
+                                    Profil Acheteur
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <Separator className="bg-border/60" />
+
+                            <div className="p-8 space-y-8">
+                                <div className="flex items-center gap-6">
+                                    <Avatar className="h-20 w-20 border border-border shadow-sm rounded-2xl">
+                                        <AvatarImage src={selectedRequest.senderLogo || ""} className="object-cover" />
+                                        <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-bold rounded-2xl uppercase">
+                                            {selectedRequest.senderName?.charAt(0)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="space-y-1.5">
+                                        <h3 className="text-2xl font-bold text-foreground tracking-tight leading-none">{selectedRequest.senderName}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">{selectedRequest.senderIndustry || "Secteur non défini"}</p>
+                                            <span className="text-slate-300">•</span>
+                                            <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+                                                <MapPin className="size-3" />
+                                                {selectedRequest.location || "Maroc"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] leading-none">Type de Compte</label>
+                                        <div className="h-10 px-4 rounded-lg border border-border flex items-center bg-muted/20 text-[13px] font-semibold text-foreground">
+                                            Acheteur Officiel
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] leading-none">Enregistré le</label>
+                                        <div className="h-10 px-4 rounded-lg border border-border flex items-center bg-muted/20 text-[13px] font-semibold text-foreground tabular-nums">
+                                            {format(new Date(selectedRequest.sentAt), "d MMMM yyyy", { locale: fr })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquare className="size-3.5 text-muted-foreground" />
+                                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] leading-none">Message d'accompagnement</span>
+                                    </div>
+                                    <div className="p-4 rounded-xl border border-border border-dashed bg-muted/5">
+                                        <p className="text-[13px] font-medium text-foreground leading-relaxed italic">
+                                            "{selectedRequest.initialMessage || "Aucun message d'accompagnement"}"
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between gap-4">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setIsRequestModalOpen(false)}
+                                        className="h-12 px-6 text-[13px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all"
+                                    >
+                                        Fermer
+                                    </Button>
+                                    <Button
+                                        onClick={() => {
+                                            handleRequestAction(selectedRequest.id, "ACCEPTED");
+                                            setIsRequestModalOpen(false);
+                                        }}
+                                        disabled={!!isProcessingRequest}
+                                        className="h-12 flex-1 bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 rounded-xl text-[13px] font-bold uppercase tracking-[0.2em] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 border-none"
+                                    >
+                                        {isProcessingRequest === selectedRequest.id ? <RefreshCw className="size-4 animate-spin" /> : "Autoriser l'Accès"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={confirmConfig.isOpen} onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-[400px]">
+                    <div className={cn(
+                        "h-1.5 bg-gradient-to-r",
+                        confirmConfig.variant === "destructive" ? "from-red-500 to-orange-500" :
+                            confirmConfig.variant === "success" ? "from-emerald-500 to-teal-500" : "from-slate-500 to-slate-700"
+                    )} />
+                    <div className="p-8 space-y-6">
+                        <AlertDialogHeader>
+                            <div className={cn(
+                                "size-12 rounded-2xl border flex items-center justify-center mb-2",
+                                confirmConfig.variant === "destructive" ? "bg-red-50 border-red-100" :
+                                    confirmConfig.variant === "success" ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"
+                            )}>
+                                {confirmConfig.icon ? (
+                                    <confirmConfig.icon className={cn(
+                                        "size-6",
+                                        confirmConfig.variant === "destructive" ? "text-red-600" :
+                                            confirmConfig.variant === "success" ? "text-emerald-600" : "text-slate-600"
+                                    )} />
+                                ) : (
+                                    <AlertCircle className={cn(
+                                        "size-6",
+                                        confirmConfig.variant === "destructive" ? "text-red-600" : "text-slate-600"
+                                    )} />
+                                )}
+                            </div>
+                            <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                {confirmConfig.title}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium text-slate-500 leading-relaxed">
+                                {confirmConfig.description}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex gap-3 sm:gap-3">
+                            <AlertDialogCancel className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] hover:bg-slate-50 shadow-none">
+                                Annuler
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    confirmConfig.onConfirm();
+                                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                                }}
+                                className={cn(
+                                    "flex-1 h-12 rounded-2xl font-bold uppercase tracking-wider text-[11px] shadow-lg transition-all active:scale-[0.98]",
+                                    confirmConfig.variant === "destructive"
+                                        ? "bg-red-600 text-white hover:bg-red-700 shadow-red-200"
+                                        : confirmConfig.variant === "success"
+                                            ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
+                                            : "bg-[#2c5f42] text-white hover:bg-[#2c5f42]/90 shadow-slate-200"
+                                )}
+                            >
+                                {confirmConfig.confirmText || "Confirmer"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

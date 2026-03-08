@@ -1,6 +1,6 @@
 "use server";
 
-import { createTender, createTenderBid, updateTenderStatus, updateTenderBidStatus, deleteTenderBid, TenderInsertDTO, TenderBidInsertDTO } from "@/data-access/tenders.dal";
+import { createTender, createTenderBid, updateTenderStatus, updateTenderBidStatus, deleteTenderBid, deleteTender, TenderInsertDTO, TenderBidInsertDTO } from "@/data-access/tenders.dal";
 import { companyRepository } from "@/persistence/repositories/company.repository";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
 import { auth } from "@/lib/auth";
@@ -114,5 +114,32 @@ export async function deleteBidAction(bidId: string) {
     } catch (error) {
         console.error("Failed to delete bid:", error);
         return { error: "Erreur lors de la suppression de l'offre" };
+    }
+}
+
+export async function deleteTenderAction(tenderId: string) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+
+    if (!session?.user || session.user.role !== "COMPANY") {
+        return { error: "Non autorisé" };
+    }
+
+    const companyProfile = await companyRepository.findByUserId(session.user.id);
+    if (!companyProfile) {
+        return { error: "Profil entreprise introuvable" };
+    }
+
+    try {
+        const deleted = await deleteTender(tenderId, companyProfile.id);
+        if (!deleted) return { error: "Appel d'offre non trouvé ou accès refusé" };
+
+        revalidatePath("/dashboard/company");
+        revalidatePath("/dashboard/farmer/market");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete tender:", error);
+        return { error: "Erreur lors de la suppression de l'appel d'offre" };
     }
 }

@@ -58,6 +58,20 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
+
 export function CompanySuppliersClient({ initialPartners }: { initialPartners: PartnerDTO[] }) {
     const [partners, setPartners] = useState<PartnerDTO[]>(initialPartners);
     const [searchQuery, setSearchQuery] = useState("");
@@ -113,16 +127,40 @@ export function CompanySuppliersClient({ initialPartners }: { initialPartners: P
             return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
         });
 
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+    });
+
     const handleResign = async (connectionId: string) => {
-        if (!confirm("Voulez-vous vraiment résilier ce contrat ? Cette action est irréversible.")) return;
-        setIsResigning(connectionId);
-        const result = await resignConnectionAction(connectionId);
-        if (result.success) {
-            setPartners(prev => prev.filter(p => p.id !== connectionId));
-        } else {
-            alert(result.error || "Erreur lors de la résiliation");
-        }
-        setIsResigning(null);
+        setConfirmConfig({
+            isOpen: true,
+            title: "Résilier le partenariat ?",
+            description: "Voulez-vous vraiment résilier ce contrat ? Cette action est irréversible et mettra fin à votre collaboration officielle.",
+            onConfirm: async () => {
+                setIsResigning(connectionId);
+                try {
+                    const result = await resignConnectionAction(connectionId);
+                    if (result.success) {
+                        setPartners(prev => prev.filter(p => p.id !== connectionId));
+                        toast.success("Partenariat résilié avec succès");
+                    } else {
+                        toast.error(result.error || "Erreur lors de la résiliation");
+                    }
+                } catch (error) {
+                    toast.error("Erreur réseau");
+                } finally {
+                    setIsResigning(null);
+                }
+            }
+        });
     };
 
     const handleViewProfile = (partner: PartnerDTO) => {
@@ -317,6 +355,36 @@ export function CompanySuppliersClient({ initialPartners }: { initialPartners: P
                         parcelPolygonId: selectedPartner.parcelPolygonId,
                     } : null}
                 />
+
+                <AlertDialog open={confirmConfig.isOpen} onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}>
+                    <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white max-w-[400px]">
+                        <div className="h-1.5 bg-gradient-to-r from-red-500 to-orange-500" />
+                        <div className="p-8 space-y-6">
+                            <AlertDialogHeader>
+                                <div className="size-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-2">
+                                    <AlertCircle className="size-6 text-red-600" />
+                                </div>
+                                <AlertDialogTitle className="text-xl font-bold text-slate-900 leading-tight">
+                                    {confirmConfig.title}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-medium text-slate-500 leading-relaxed">
+                                    {confirmConfig.description}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="flex gap-3 sm:gap-3">
+                                <AlertDialogCancel className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] hover:bg-slate-50">
+                                    Annuler
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={confirmConfig.onConfirm}
+                                    className="flex-1 h-12 rounded-2xl bg-red-600 text-white hover:bg-red-700 font-bold uppercase tracking-wider text-[11px] shadow-lg shadow-red-200 transition-all active:scale-[0.98]"
+                                >
+                                    Résilier
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </div>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

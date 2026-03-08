@@ -1,13 +1,21 @@
 "use server";
 
-import { getHistoricalNDVI, getCurrentWeather, getWeatherForecast, getSoilData, createPolygonOnAgroMonitoring } from "@/services/agromonitoring.service";
+import {
+    getHistoricalIndex,
+    getCurrentWeather,
+    getWeatherForecast,
+    getSoilData,
+    createPolygonOnAgroMonitoring,
+    getAccumulatedData,
+    getUVIData,
+    searchSatelliteImages
+} from "@/services/agromonitoring.service";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
 
 /**
- * Server Action to fetch NDVI History safely from client components
- * It fetches the last 6 months of NDVI data for a given polygon
+ * Server Action to fetch specific Index History (NDVI, EVI, NDWI, etc.)
  */
-export async function getHistoricalNDVIAction(polygonId: string) {
+export async function getHistoricalIndexAction(polygonId: string, index: string = "ndvi") {
     if (!polygonId || polygonId === "WAITING_API_SYNC") {
         return { data: [], error: "No valid polygon ID provided" };
     }
@@ -17,11 +25,11 @@ export async function getHistoricalNDVIAction(polygonId: string) {
         const startDate = new Date();
         startDate.setMonth(startDate.getMonth() - 6);
 
-        const data = await getHistoricalNDVI(polygonId, startDate, endDate);
+        const data = await getHistoricalIndex(index, polygonId, startDate, endDate);
         return { data, error: null };
     } catch (error: any) {
-        console.error("Failed to fetch historical NDVI in action:", error);
-        return { data: [], error: "Failed to fetch satellite data" };
+        console.error(`Failed to fetch ${index} history in action:`, error);
+        return { data: [], error: `Failed to fetch ${index} data` };
     }
 }
 
@@ -36,14 +44,17 @@ export async function getFarmerAnalyticsAction(polygonId: string) {
         startDate.setMonth(startDate.getMonth() - 6);
 
         const dataPromise = Promise.all([
-            getHistoricalNDVI(polygonId, startDate, endDate),
+            getHistoricalIndex("ndvi", polygonId, startDate, endDate),
             getCurrentWeather(polygonId),
             getWeatherForecast(polygonId),
-            getSoilData(polygonId)
+            getSoilData(polygonId),
+            getAccumulatedData("temp", polygonId, startDate, endDate),
+            getAccumulatedData("prec", polygonId, startDate, endDate),
+            getUVIData(polygonId)
         ]);
 
         const timeoutPromise = new Promise(resolve =>
-            setTimeout(() => resolve("TIMEOUT"), 5000)
+            setTimeout(() => resolve("TIMEOUT"), 8000) // Increased timeout for more data
         );
 
         const result = await Promise.race([dataPromise, timeoutPromise]);
@@ -52,20 +63,41 @@ export async function getFarmerAnalyticsAction(polygonId: string) {
             return { data: null, error: "TIMEOUT", isTimeout: true };
         }
 
-        const [ndvi, weather, forecast, soil] = result as any;
+        const [ndvi, weather, forecast, soil, accTemp, accPrec, uvi] = result as any;
 
         return {
             data: {
                 ndvi,
                 weather,
                 forecast: forecast?.list ? forecast.list.filter((_: any, i: number) => i % 8 === 0) : [],
-                soil
+                soil,
+                accumulated: {
+                    temp: accTemp?.data,
+                    prec: accPrec?.data
+                },
+                uvi: uvi?.uvi
             },
             error: null
         };
     } catch (error) {
         console.error("getFarmerAnalyticsAction error:", error);
         return { data: null, error: "Erreur lors de la récupération des données" };
+    }
+}
+
+export async function getSatelliteImageryAction(polygonId: string) {
+    if (!polygonId || polygonId === "WAITING_API_SYNC") return { data: [], error: "INVALID_ID" };
+
+    try {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1); // Last month for imagery
+
+        const scenes = await searchSatelliteImages(polygonId, startDate, endDate);
+        return { data: scenes, error: null };
+    } catch (error) {
+        console.error("getSatelliteImageryAction error:", error);
+        return { data: [], error: "Erreur imagerie satellite" };
     }
 }
 
@@ -77,16 +109,13 @@ export async function syncParcelWithAgroMonitoringAction(parcelId: string) {
         if (!parcel) return { error: "Parcelle introuvable" };
         if (parcel.polygonId !== "WAITING_API_SYNC") return { data: parcel.polygonId };
 
-        // --- AgroMonitoring Constraint: Minimum 1.0 ha ---
         const areaHectares = Number(parcel.area);
         if (areaHectares < 1.0) {
-            console.log(`Parcel ${parcelId} too small for AgroMonitoring (Area: ${areaHectares}ha). Falling back to simulation.`);
             return { data: "DEMO_POLY_ID_SMALL_PARCEL", error: null };
         }
 
-        console.log(`Attempting Lazy Sync for Parcel: ${parcelId} (${areaHectares}ha)`);
         const apiResponse = await createPolygonOnAgroMonitoring(
-            `Farm_Repair_${parcel.farmerId.substring(0, 8)}`,
+            `Farm_${parcel.farmerId.substring(0, 8)}`,
             parcel.geoJson
         );
 
@@ -94,7 +123,6 @@ export async function syncParcelWithAgroMonitoringAction(parcelId: string) {
             await farmerRepository.updateParcel(parcelId, {
                 polygonId: apiResponse.id
             });
-            console.log(`Lazy Sync Success: ${apiResponse.id}`);
             return { data: apiResponse.id, error: null };
         }
 
