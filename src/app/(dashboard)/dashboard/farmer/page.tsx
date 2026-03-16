@@ -11,6 +11,8 @@ import { getFarmerHarvestPlans } from "@/data-access/harvests.dal";
 import { getFarmerExpenses } from "@/data-access/expenses.dal";
 import { FarmerDashboardTabs } from "./farmer-dashboard-tabs";
 import { calculateFarmerScore } from "@/lib/utils/profile-score";
+import { getFarmPerformanceHistory } from "@/data-access/farm_performance.dal";
+import { getFarmLogs } from "@/data-access/traceability.dal";
 import { ConfidenceScoreCard } from "@/components/dashboard/confidence-score-card";
 import { getHistoricalNDVI, getCurrentWeather, getWeatherForecast, getSoilData } from "@/services/agromonitoring.service";
 import { syncParcelWithAgroMonitoringAction, getFarmerAnalyticsAction, getSatelliteImageryAction } from "@/actions/agromonitoring.actions";
@@ -90,7 +92,7 @@ export default async function FarmerDashboardPage({
     if (!profile) redirect("/onboarding/farmer");
 
     // Fetch farmer-specific metrics using DALs
-    const [myProducts, acceptedPartners, incomingRequests, parcelsList, openTenders, myBids, myQuotes, harvestPlans, expenses, marketChartData] = await Promise.all([
+    const [myProducts, acceptedPartners, incomingRequests, parcelsList, openTenders, myBids, myQuotes, harvestPlans, expenses, marketChartData, performanceHistory, farmLogsResult] = await Promise.all([
         getFarmerProducts(profile.id),
         getAcceptedPartners(profile.id, "FARMER"),
         getIncomingRequests(profile.id, "FARMER"),
@@ -100,7 +102,9 @@ export default async function FarmerDashboardPage({
         quoteRepository.findBySenderUserId(session.user.id),
         getFarmerHarvestPlans(profile.id),
         getFarmerExpenses(profile.id),
-        getMarketChartData()
+        getMarketChartData(),
+        getFarmPerformanceHistory(session.user.id),
+        getFarmLogs(profile.id)
     ]);
 
     // Fetch NDVI and Weather Data if a parcel is connected
@@ -193,7 +197,8 @@ export default async function FarmerDashboardPage({
                                             tab === "tenders" ? "Appels d'Offres" :
                                                 tab === "planning" ? "Planning Récolte" :
                                                     tab === "finances" ? "Finances" :
-                                                        tab === "land" ? "Ma Terre & Météo" : "Vue d'ensemble"}
+                                                        tab === "logbook" ? "Carnet de Bord & Traçabilité" :
+                                                            tab === "land" ? "Ma Terre & Météo" : "Vue d'ensemble"}
                         </span>
                     </div>
                 </div>
@@ -288,6 +293,9 @@ export default async function FarmerDashboardPage({
                     geoJson={parcelsList[0]?.geoJson}
                     advancedData={advancedData}
                     polygonId={activePolygonId}
+                    performanceHistory={performanceHistory}
+                    initialFarmLogs={farmLogsResult}
+                    initialParcels={parcelsList}
                 />
             </div>
         </main>

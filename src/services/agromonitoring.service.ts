@@ -51,9 +51,9 @@ export async function getHistoricalIndex(index: string, polygonId: string, start
     const apiKey = process.env.AGROMONITORING_API_KEY?.trim();
     const indexLower = index.toLowerCase();
 
-    // Mock data for demo or if no API key
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
-        console.log(`[AgroMonitoring] Using mock data for ${indexLower} (DEMO)`);
+    // Mock data for demo or if no API key or if still syncing
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
+
         return generateMockHistory(indexLower);
     }
 
@@ -61,7 +61,7 @@ export async function getHistoricalIndex(index: string, polygonId: string, start
     const end = Math.floor(endDate.getTime() / 1000);
     const url = `${AGRO_API_URL}/${indexLower}/history?polyid=${polygonId}&start=${start}&end=${end}&appid=${apiKey}`;
 
-    console.log(`[AgroMonitoring] Fetching Index: ${indexLower} for Poly: ${polygonId}`);
+
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
@@ -84,7 +84,7 @@ export async function getHistoricalIndex(index: string, polygonId: string, start
         }
 
         const result = await response.json();
-        console.log(`[AgroMonitoring] Success: Fetched ${result.length} points for ${indexLower}`);
+
         return result;
     } catch (error: any) {
         clearTimeout(timeoutId);
@@ -120,7 +120,7 @@ export async function getHistoricalNDVI(polygonId: string, startDate: Date, endD
 
 export async function getAccumulatedData(type: "temp" | "prec", polygonId: string, startDate: Date, endDate: Date) {
     const apiKey = process.env.AGROMONITORING_API_KEY?.trim();
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return {
             dt: Math.floor(Date.now() / 1000),
             data: type === "temp" ? 1250.5 : 450.2 // Mock totals
@@ -138,7 +138,7 @@ export async function getAccumulatedData(type: "temp" | "prec", polygonId: strin
 
 export async function getUVIData(polygonId: string) {
     const apiKey = process.env.AGROMONITORING_API_KEY?.trim();
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return { uvi: 4.5, dt: Math.floor(Date.now() / 1000) };
     }
 
@@ -150,7 +150,7 @@ export async function getUVIData(polygonId: string) {
 
 export async function searchSatelliteImages(polygonId: string, startDate: Date, endDate: Date) {
     const apiKey = process.env.AGROMONITORING_API_KEY?.trim();
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return [{
             dt: Math.floor(Date.now() / 1000),
             type: "sentinel-2",
@@ -198,7 +198,7 @@ export async function searchSatelliteImages(polygonId: string, startDate: Date, 
 
 export async function getCurrentWeather(polygonId: string) {
     const apiKey = process.env.AGROMONITORING_API_KEY?.trim();
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return {
             main: { temp: 298.15, humidity: 45 },
             weather: [{ id: 800, main: "Clear", description: "ciel dégagé", icon: "01d" }],
@@ -216,7 +216,7 @@ export async function getCurrentWeather(polygonId: string) {
 
 export async function getWeatherForecast(polygonId: string) {
     const apiKey = process.env.AGROMONITORING_API_KEY;
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return {
             list: Array.from({ length: 40 }, (_, i) => ({
                 dt: Math.floor(Date.now() / 1000) + i * 3600 * 3,
@@ -236,7 +236,7 @@ export async function getWeatherForecast(polygonId: string) {
 export async function getSoilData(polygonId: string) {
     const apiKey = process.env.AGROMONITORING_API_KEY;
 
-    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID")) {
+    if (!apiKey || polygonId.startsWith("DEMO_POLY_ID") || polygonId === "WAITING_API_SYNC") {
         return {
             t0: 295.15,
             moisture: 0.22,

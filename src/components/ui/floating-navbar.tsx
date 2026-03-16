@@ -35,9 +35,14 @@ export const FloatingNav = ({
             <Leaf className="w-5 h-5 text-green-600 transition-transform group-hover:scale-110" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse blur-[2px] opacity-50" />
           </div>
-          <span className="font-black text-base tracking-tighter text-zinc-900 uppercase italic">
-            AGRIMAR
-          </span>
+          <div className="flex flex-col">
+            <span className="font-black text-[15px] tracking-tighter text-zinc-900 uppercase italic leading-none">
+              AGRIMAR
+            </span>
+            <span className="text-[8px] text-zinc-500 font-semibold leading-none mt-1.5 whitespace-nowrap">
+              Tout ce qu'il vous faut pour transformer votre exploitation agricole
+            </span>
+          </div>
         </Link>
 
         {/* Divider */}
@@ -62,8 +67,8 @@ export const FloatingNav = ({
 
         {/* CTA Button */}
         <Link href="/register">
-          <button className="rounded-full bg-green-600 px-5 py-1.5 text-sm font-semibold text-white transition-all hover:bg-green-700">
-            Démarrer
+          <button className="rounded-full bg-green-600 px-5 py-1.5 text-sm font-semibold text-white transition-all shadow-md hover:bg-green-700 hover:shadow-lg active:scale-95">
+            Book démo
           </button>
         </Link>
       </div>

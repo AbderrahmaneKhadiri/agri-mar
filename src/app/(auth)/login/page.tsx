@@ -31,13 +31,13 @@ export default function LoginPage() {
         setError("");
 
         try {
-            console.log("Attempting login for:", email);
+
             const { data, error } = await signIn.email({
                 email,
                 password,
             });
 
-            console.log("SignIn response:", { data, error });
+
 
             if (error) {
                 setError(error.message || "Email ou mot de passe incorrect");
@@ -98,7 +98,14 @@ export default function LoginPage() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-1">
                                         <Label htmlFor="password" title="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mot de passe</Label>
-                                        <a href="#" className="text-[11px] font-bold text-emerald-600 hover:underline">Oublié ?</a>
+                                        <button
+                                            type="button"
+                                            onClick={() => alert("Fonctionnalité de récupération de mot de passe à venir.")}
+                                            className="text-[11px] font-bold text-emerald-600 hover:underline"
+                                        >
+                                            Oublié ?
+                                        </button>
+
                                     </div>
                                     <div className="relative group">
                                         <Input

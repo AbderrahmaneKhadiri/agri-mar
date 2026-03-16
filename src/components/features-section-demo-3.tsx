@@ -14,6 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import createGlobe from "cobe";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function FeaturesSectionDemo() {
   const features = [
@@ -65,7 +66,7 @@ export default function FeaturesSectionDemo() {
       </div>
 
       <div className="relative mt-12">
-        <div className="grid grid-cols-1 rounded-2xl lg:grid-cols-6 xl:border border-zinc-100 overflow-hidden shadow-sm">
+        <ScrollReveal stagger staggerDelay={0.1} className="grid grid-cols-1 rounded-2xl lg:grid-cols-6 xl:border border-zinc-100 overflow-hidden shadow-sm">
           {features.map((feature) => (
             <FeatureCard key={feature.title} className={feature.className}>
               <FeatureTitle>{feature.title}</FeatureTitle>
@@ -73,7 +74,7 @@ export default function FeaturesSectionDemo() {
               <div className="h-full w-full">{feature.skeleton}</div>
             </FeatureCard>
           ))}
-        </div>
+        </ScrollReveal>
       </div>
     </div>
   );
@@ -416,7 +417,7 @@ export const SkeletonFour = () => {
       </div>
 
       {/* Globe pinned to bottom-right, bleeding off edge */}
-      <Globe className="absolute -bottom-16 -right-16 opacity-100 drop-shadow-2xl" />
+      <Globe className="absolute -bottom-10 -right-10 opacity-100 drop-shadow-2xl scale-110" />
     </div>
   );
 };
@@ -435,21 +436,21 @@ export const Globe = ({ className }: { className?: string }) => {
       phi: 0,
       theta: 0.25,
       dark: 0,
-      diffuse: 1.4,
-      mapSamples: 16000,
-      mapBrightness: 7,
-      baseColor: [0.92, 0.97, 0.92],
-      markerColor: [0.1, 0.65, 0.3],
-      glowColor: [0.7, 0.95, 0.75],
+      diffuse: 1.5,
+      mapSamples: 20000,
+      mapBrightness: 10,
+      baseColor: [1, 1, 1],
+      markerColor: [0.1, 0.7, 0.3], // High contrast green
+      glowColor: [1, 1, 1],
       markers: [
-        { location: [31.7917, -7.0926], size: 0.09 },
-        { location: [33.5731, -7.5898], size: 0.07 },
-        { location: [30.4278, -9.5981], size: 0.06 },
-        { location: [33.8935, -5.5547], size: 0.06 },
+        { location: [31.7917, -7.0926], size: 0.12 },
+        { location: [33.5731, -7.5898], size: 0.09 },
+        { location: [30.4278, -9.5981], size: 0.07 },
+        { location: [33.8935, -5.5547], size: 0.07 },
       ],
       onRender: (state) => {
         state.phi = phi;
-        phi += 0.004;
+        phi += 0.003;
       },
     });
 
@@ -459,8 +460,8 @@ export const Globe = ({ className }: { className?: string }) => {
   return (
     <canvas
       ref={canvasRef}
-      style={{ width: 300, height: 300, maxWidth: "100%", aspectRatio: 1 }}
-      className={className}
+      style={{ width: 600, height: 600, maxWidth: "100%", aspectRatio: 1 }}
+      className={cn("opacity-100 transition-opacity duration-500", className)}
     />
   );
 };

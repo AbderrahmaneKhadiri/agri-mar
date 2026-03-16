@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { farmerRepository } from "@/persistence/repositories/farmer.repository";
 import { companyRepository } from "@/persistence/repositories/company.repository";
+import { FloatingAIAdvisor } from "@/components/dashboard/chat/floating-ai-advisor";
 
 export default async function DashboardLayout({
     children,
@@ -49,6 +50,7 @@ export default async function DashboardLayout({
                     </div>
                 </div>
             </SidebarInset>
+            {session.user.role === "FARMER" && <FloatingAIAdvisor />}
         </SidebarProvider>
     );
 }

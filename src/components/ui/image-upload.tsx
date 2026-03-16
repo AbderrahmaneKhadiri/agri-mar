@@ -37,7 +37,7 @@ export function ImageUpload({ value, onChange, onRemove, maxFiles = 1, className
         const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "agrimar";
         const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "agrimar";
 
-        console.log("Starting upload to Cloudinary...", { cloudName, uploadPreset });
+
 
         const formData = new FormData();
         formData.append("file", file);
@@ -53,7 +53,7 @@ export function ImageUpload({ value, onChange, onRemove, maxFiles = 1, className
             );
 
             const data = await response.json();
-            console.log("Cloudinary response:", data);
+
 
             if (response.ok && data.secure_url) {
                 const newValues = maxFiles === 1 ? [data.secure_url] : [...value, data.secure_url];

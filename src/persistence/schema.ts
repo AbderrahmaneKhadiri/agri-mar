@@ -16,6 +16,7 @@ export const tenderStatusEnum = pgEnum("tender_status", ["OPEN", "CLOSED", "FULF
 export const tenderBidStatusEnum = pgEnum("tender_bid_status", ["PENDING", "ACCEPTED", "REJECTED"]);
 export const harvestStatusEnum = pgEnum("harvest_status", ["PLANNED", "GROWING", "HARVESTED", "CANCELLED"]);
 export const expenseCategoryEnum = pgEnum("expense_category", ["INPUTS", "LABOR", "FUEL", "LOGISTICS", "OTHERS"]);
+export const logActionTypeEnum = pgEnum("log_action_type", ["IRRIGATION", "FERTILIZATION", "TREATMENT", "SOWING", "HARVEST", "MAINTENANCE", "OTHER"]);
 
 // --- USERS (Managed by Better-Auth) ---
 export const user = pgTable("user", {
@@ -313,6 +314,25 @@ export const expenses = pgTable("expenses", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// --- FARM LOGS (Traceability) ---
+export const farmLogs = pgTable("farm_logs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    farmerId: uuid("farmer_id").references(() => farmerProfiles.id, { onDelete: 'cascade' }).notNull(),
+    parcelId: uuid("parcel_id").references(() => parcels.id, { onDelete: 'set null' }),
+    harvestPlanId: uuid("harvest_plan_id").references(() => harvestPlans.id, { onDelete: 'set null' }),
+
+    actionType: logActionTypeEnum("action_type").notNull(),
+    description: text("description").notNull(),
+
+    // Structured data extracted from voice/text
+    quantity: decimal("quantity"),
+    unit: text("unit"),
+    productUsed: text("product_used"),
+
+    date: timestamp("date").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- RELATIONS ---
 export const userRelations = relations(user, ({ one, many }) => ({
     farmerProfile: one(farmerProfiles),
@@ -331,15 +351,24 @@ export const farmerProfileRelations = relations(farmerProfiles, ({ one, many }) 
     tenderBids: many(tenderBids),
     harvestPlans: many(harvestPlans),
     expenses: many(expenses),
+    farmLogs: many(farmLogs),
 }));
 
 export const harvestPlanRelations = relations(harvestPlans, ({ one, many }) => ({
     farmer: one(farmerProfiles, { fields: [harvestPlans.farmerId], references: [farmerProfiles.id] }),
     expenses: many(expenses),
+    farmLogs: many(farmLogs),
 }));
 
-export const parcelRelations = relations(parcels, ({ one }) => ({
+export const parcelRelations = relations(parcels, ({ one, many }) => ({
     farmer: one(farmerProfiles, { fields: [parcels.farmerId], references: [farmerProfiles.id] }),
+    farmLogs: many(farmLogs),
+}));
+
+export const farmLogRelations = relations(farmLogs, ({ one }) => ({
+    farmer: one(farmerProfiles, { fields: [farmLogs.farmerId], references: [farmerProfiles.id] }),
+    parcel: one(parcels, { fields: [farmLogs.parcelId], references: [parcels.id] }),
+    harvestPlan: one(harvestPlans, { fields: [farmLogs.harvestPlanId], references: [harvestPlans.id] }),
 }));
 
 export const expenseRelations = relations(expenses, ({ one }) => ({

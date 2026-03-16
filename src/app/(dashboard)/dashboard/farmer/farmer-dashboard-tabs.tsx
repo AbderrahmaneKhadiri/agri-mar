@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap, Plus, ShoppingBag, Sprout, Users, Trash2, UserMinus, Eye, Pencil, Trash, Activity, Thermometer, CloudRain, Sun, MessageSquare, Check, X, Loader2 } from "lucide-react";
+import { Search, History, Clock, ArrowUpRightIcon, MapPin, Droplets, Building2, LandPlot, ShieldCheck, Waves, Truck, Store, LayoutGrid, Phone, Mail, Globe, Calendar, Briefcase, Boxes, Zap, Plus, ShoppingBag, Sprout, Users, Trash2, UserMinus, Eye, Pencil, Trash, Activity, Thermometer, CloudRain, Sun, MessageSquare, Check, X, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +31,10 @@ import { WeatherCard } from "@/components/dashboard/weather-card";
 import { SoilCard } from "@/components/dashboard/soil-card";
 import { AdvancedInsightsGrid } from "@/components/dashboard/advanced-insights-grid";
 import { SatelliteVisionCard } from "@/components/dashboard/satellite-vision-card";
+import { HistoryAnalyticsChart } from "@/components/dashboard/history-analytics-chart";
+import { PerformanceBadge } from "@/components/dashboard/performance-badge";
+import { LogbookTab } from "@/components/dashboard/farmer/logbook-tab";
+import { ClipboardCheck } from "lucide-react";
 import { TenderSelectDTO, TenderBidSelectDTO } from "@/data-access/tenders.dal";
 import { HarvestPlanSelectDTO } from "@/data-access/harvests.dal";
 import { IncomingRequestDTO, PartnerDTO } from "@/data-access/connections.dal";
@@ -79,6 +83,9 @@ interface FarmerDashboardTabsProps {
     satelliteScenes?: any[];
     geoJson?: any;
     advancedData?: any;
+    performanceHistory?: any;
+    initialFarmLogs?: any[];
+    initialParcels?: any[];
 }
 
 export function FarmerDashboardTabs({
@@ -100,7 +107,10 @@ export function FarmerDashboardTabs({
     polygonId = "",
     satelliteScenes = [],
     geoJson = null,
-    advancedData = null
+    advancedData = null,
+    performanceHistory = null,
+    initialFarmLogs = [],
+    initialParcels = []
 }: FarmerDashboardTabsProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -109,11 +119,13 @@ export function FarmerDashboardTabs({
     const [activeTab, setActiveTab] = useState(tabParam);
     const [searchQuery, setSearchQuery] = useState("");
     const [products, setProducts] = useState(initialProducts);
+    const [farmLogs, setFarmLogs] = useState(initialFarmLogs);
 
     // Sync state with props when server data changes
     useEffect(() => {
         setProducts(initialProducts);
-    }, [initialProducts]);
+        setFarmLogs(initialFarmLogs);
+    }, [initialProducts, initialFarmLogs]);
 
     // Sync state with URL param
     useEffect(() => {
@@ -922,6 +934,106 @@ export function FarmerDashboardTabs({
                 </TabsContent>
 
 
+                <TabsContent value="logbook" className="m-0 space-y-6">
+                    <LogbookTab
+                        initialLogs={farmLogs}
+                        farmerId={profile.id}
+                        parcels={initialParcels}
+                        farmName={profile.farmName}
+                    />
+                </TabsContent>
+
+                <TabsContent value="history" className="m-0 space-y-6">
+                    <div className="rounded-[2rem] bg-white border border-[#d4e9dc] px-10 py-10 relative overflow-hidden shadow-sm">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#f0f8f4] rounded-full -mr-32 -mt-32 opacity-50" />
+
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-xl bg-[#f0f8f4] border border-[#d4e9dc]">
+                                        <History className="size-5 text-[#2c5f42]" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-[#4a8c5c] uppercase tracking-[0.3em]">Analytics Avancés</span>
+                                </div>
+                                <h2 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">Performance Historique</h2>
+                                <p className="text-[13px] text-slate-500 font-medium max-w-xl leading-relaxed">
+                                    Suivi long terme de la santé de vos parcelles. Comparez vos cycles actuels avec les archives pour optimiser vos rendements.
+                                </p>
+                            </div>
+                            <Button className="h-11 px-6 rounded-xl bg-[#2c5f42] text-white hover:bg-[#1a3d2a] font-bold uppercase text-[10px] tracking-widest transition-all shadow-md">
+                                Exporter Rapport
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <Card className="lg:col-span-2 border-[#d4e9dc] shadow-sm rounded-[2rem] overflow-hidden bg-white">
+                            <CardHeader className="p-8 pb-0 flex flex-row items-center justify-between border-b border-neutral-50 mb-6">
+                                <div>
+                                    <CardTitle className="text-xl font-bold text-slate-950 tracking-tight">Indice NDVI Temporel</CardTitle>
+                                    <CardDescription className="text-sm font-medium text-slate-400 mt-1">Comparaison de vigueur végétative (An-1 vs Actuel)</CardDescription>
+                                </div>
+                                <div className="p-2 rounded-xl bg-neutral-50">
+                                    <Activity className="size-5 text-[#4a8c5c]/40" />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-8 pt-0">
+                                <div className="h-[350px] w-full">
+                                    <HistoryAnalyticsChart
+                                        data={performanceHistory}
+                                        isSyncing={isSyncing}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="space-y-6 flex flex-col">
+                            <Card className="flex-1 border-[#d4e9dc] shadow-sm rounded-[2rem] overflow-hidden bg-white border-l-4 border-l-[#2c5f42]">
+                                <CardContent className="p-8 h-full flex flex-col justify-between">
+                                    <div className="flex items-center justify-between mb-8 text-[#2c5f42]">
+                                        <div className="p-2.5 rounded-xl bg-[#f0f8f4] border border-[#d4e9dc]">
+                                            <ShieldCheck className="size-5" />
+                                        </div>
+                                        <Badge variant="outline" className="text-[#4a8c5c] border-[#d4e9dc] font-bold text-[9px] px-2 tracking-widest uppercase">Certifié</Badge>
+                                    </div>
+
+                                    <PerformanceBadge
+                                        score={performanceHistory?.score}
+                                        delta={performanceHistory?.stats?.delta || "0"}
+                                    />
+
+                                    <div className="space-y-4">
+                                        <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-[#2c5f42] transition-all duration-1000"
+                                                style={{ width: `${performanceHistory?.score || 0}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                                            Score fondé sur la régularité du NDVI et l'optimisation des ressources.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-[#d4e9dc] shadow-sm rounded-[2rem] overflow-hidden bg-white relative">
+
+                                <CardContent className="p-8">
+                                    <div className="p-2.5 w-fit rounded-xl bg-[#f0f8f4] text-[#2c5f42] mb-6 border border-[#d4e9dc]">
+                                        <History className="size-5" />
+                                    </div>
+                                    <h4 className="text-xl font-bold text-slate-950 mb-2 tracking-tight">Rapport de Rendement</h4>
+                                    <p className="text-[13px] text-slate-500 leading-relaxed mb-6 font-medium">
+                                        Générez un certificat officiel pour vos partenaires ou assurances.
+                                    </p>
+                                    <Button className="w-full bg-[#f0f8f4] text-[#2c5f42] hover:bg-[#2c5f42] hover:text-white font-bold uppercase text-[10px] tracking-widest h-11 rounded-xl shadow-none transition-colors border-none">
+                                        Générer Certificat
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </TabsContent>
                 <TabsContent value="profile" className="m-0 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Farm Info */}
@@ -1387,6 +1499,6 @@ export function FarmerDashboardTabs({
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     );
 }

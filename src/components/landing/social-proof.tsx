@@ -3,6 +3,7 @@
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import { Star } from "lucide-react";
 import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 const people = [
     {
@@ -63,7 +64,7 @@ const partners = [
 export function SocialProof() {
     return (
         <section className="py-16 border-b bg-white overflow-hidden">
-            <div className="container mx-auto px-4 text-center mb-10">
+            <ScrollReveal stagger staggerDelay={0.1} className="container mx-auto px-4 text-center mb-10">
                 {/* Avatars */}
                 <div className="flex flex-row items-center justify-center mb-4 w-full">
                     <AnimatedTooltip items={people} />
@@ -78,7 +79,7 @@ export function SocialProof() {
                 <p className="text-sm font-medium text-zinc-400">
                     <span className="text-black font-semibold">4.9/5</span> — Noté par plus de 200 agriculteurs et entreprises
                 </p>
-            </div>
+            </ScrollReveal>
 
             {/* Separator label */}
             <p className="text-xs font-semibold tracking-widest text-zinc-300 uppercase text-center mb-8">

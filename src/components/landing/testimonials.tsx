@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 const testimonials = [
     {
@@ -118,7 +119,7 @@ export function Testimonials() {
         <section id="testimonials" className="py-28 bg-white overflow-hidden">
             <div className="container mx-auto px-4">
                 {/* Header */}
-                <div className="text-center mb-16">
+                <ScrollReveal animation="fade" className="text-center mb-16">
                     <p className="text-green-600 font-semibold text-sm tracking-widest uppercase mb-4">
                         Témoignages
                     </p>
@@ -127,7 +128,7 @@ export function Testimonials() {
                         <br />
                         <span className="text-zinc-300">d'agriculteurs et d'entreprises.</span>
                     </h2>
-                </div>
+                </ScrollReveal>
 
                 {/* 3-column infinite upward scroll */}
                 <div

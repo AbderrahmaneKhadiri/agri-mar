@@ -11,6 +11,7 @@ import {
     Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 const items = [
     {
@@ -88,7 +89,7 @@ function GridItem({ item, className }: { item: typeof items[0]; className?: stri
 
 export function FeaturesGrid() {
     return (
-        <section id="features-grid" className="py-20 bg-white">
+        <section id="features" className="py-20 bg-white">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="max-w-2xl mb-16">
@@ -104,7 +105,7 @@ export function FeaturesGrid() {
                 </div>
 
                 {/* Row 1 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-zinc-100">
+                <ScrollReveal stagger staggerDelay={0.08} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-zinc-100">
                     {items.slice(0, 4).map((item, index) => (
                         <GridItem
                             key={index}
@@ -115,10 +116,10 @@ export function FeaturesGrid() {
                             )}
                         />
                     ))}
-                </div>
+                </ScrollReveal>
 
                 {/* Row 2 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-l border-r border-b border-zinc-100">
+                <ScrollReveal stagger staggerDelay={0.08} delay={0.2} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-l border-r border-b border-zinc-100">
                     {items.slice(4, 8).map((item, index) => (
                         <GridItem
                             key={index + 4}
@@ -129,7 +130,7 @@ export function FeaturesGrid() {
                             )}
                         />
                     ))}
-                </div>
+                </ScrollReveal>
             </div>
         </section>
     );

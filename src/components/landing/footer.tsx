@@ -28,7 +28,15 @@ export function Footer() {
                             <ul className="flex flex-col gap-2.5">
                                 {items.map((item) => (
                                     <li key={item}>
-                                        <Link href="#" className="text-sm hover:text-green-600 transition-colors duration-200">
+                                        <Link
+                                            href={
+                                                item === "Marketplace" ? "/register" :
+                                                    item === "Suivi Satellite" ? "#features" :
+                                                        item === "À propos" ? "#features" :
+                                                            "/"
+                                            }
+                                            className="text-sm hover:text-green-600 transition-colors duration-200"
+                                        >
                                             {item}
                                         </Link>
                                     </li>

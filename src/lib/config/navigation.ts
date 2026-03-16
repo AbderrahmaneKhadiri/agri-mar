@@ -11,7 +11,10 @@ import {
     Globe,
     User,
     ShoppingBag,
-    Network
+    Network,
+    Sparkles,
+    History,
+    ClipboardCheck
 } from "lucide-react";
 
 export type NavItem = {
@@ -33,6 +36,11 @@ export const FARMER_NAV_GROUPS: NavGroup[] = [
                 title: "Vue d'ensemble",
                 href: "/dashboard/farmer",
                 icon: LayoutDashboard,
+            },
+            {
+                title: "Historique & Performance",
+                href: "/dashboard/farmer?tab=history",
+                icon: History,
             },
         ],
     },
@@ -79,11 +87,21 @@ export const FARMER_NAV_GROUPS: NavGroup[] = [
                 href: "/dashboard/farmer?tab=land",
                 icon: Globe,
             },
+            {
+                title: "Carnet de Bord & Traçabilité",
+                href: "/dashboard/farmer?tab=logbook",
+                icon: ClipboardCheck,
+            },
         ],
     },
     {
         title: "Messagerie & Profil",
         items: [
+            {
+                title: "Conseiller IA",
+                href: "/dashboard/farmer/advisor",
+                icon: Sparkles,
+            },
             {
                 title: "Messagerie",
                 href: "/dashboard/farmer/messages",

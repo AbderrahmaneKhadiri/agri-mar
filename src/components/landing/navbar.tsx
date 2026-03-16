@@ -6,6 +6,11 @@ import { Leaf, Sparkles, Star, LogIn } from "lucide-react";
 
 const navItems = [
     {
+        name: "Solutions",
+        link: "#features",
+        icon: <Leaf className="w-4 h-4" />,
+    },
+    {
         name: "Fonctionnalités",
         link: "#features",
         icon: <Sparkles className="w-4 h-4" />,
@@ -14,11 +19,6 @@ const navItems = [
         name: "Témoignages",
         link: "#testimonials",
         icon: <Star className="w-4 h-4" />,
-    },
-    {
-        name: "Se connecter",
-        link: "/login",
-        icon: <LogIn className="w-4 h-4" />,
     },
 ];
 
